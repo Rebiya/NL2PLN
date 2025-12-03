@@ -16,7 +16,8 @@ logger = logging.getLogger(dspy.teleprompt.gepa.gepa.__name__)
 # --------------------------------------------------------------------------- #
 #model = "openrouter/z-ai/glm-4.5"
 #model = "cerebras/gpt-oss-120b"
-model = "openrouter/deepseek/deepseek-v3.2"
+#model = "openrouter/deepseek/deepseek-v3.2"
+model = "openrouter/moonshotai/kimi-k2-0905:exacto"
 #model = "openrouter/openai/gpt-5.1"
 optmodel = model
 
@@ -63,7 +64,7 @@ teleprompter = GEPA(metric=difficulty_metric
 module = NL2PLNModule()
 
 i = 3
-module.load(f"programs/manual{i - 1}.json")
+module.load(f"programs/manualng{i - 1}.json")
 
 trainset = dataset[:(i + 1)]
 valset = dataset[:(i + 1)]
@@ -74,4 +75,4 @@ module = teleprompter.compile(
 )
 print(pformat(module.detailed_results, width=100, indent=2))
 
-module.save(f"programs/manual{i}.json")
+module.save(f"programs/manualng{i}.json")

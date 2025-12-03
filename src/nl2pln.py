@@ -44,26 +44,45 @@ TRUTH_VALUE can be either (STV strength confidence) with strenght and confidence
             or a variable $tv in the case of queries.
 """
 
-def format_result(q, proof, comp):
-    return dedent(f"""
-        Proof: {proof}
-        for question: '{q['question']}'
-        matched expected answer: {q['expected_answer']}
-        with similarity: {comp.proof_exists_and_matches_expected_answer}
-        Reasoning: {comp.reasoning}
-    """)
+class ProofEvaluatorSignature(dspy.Signature):
+    """Evaluate how well a proof answers a question and suggest improvements.
 
-def format_hint(gold_stmts, q):
-    return dedent(f"""
-        A possible representation (inspiration only):
-        Statements: {gold_stmts}
-        Queries: {q['query']}
-    """)
+    You are evaluating PLN (Probabilistic Logic Networks) proofs generated from natural language.
+    Assess whether the proof correctly answers the question and provide constructive feedback.
+    """
+    # Inputs
+    sentences: List[str] = dspy.InputField(desc="Original natural language sentences")
+    question: str = dspy.InputField(desc="The question being asked")
+    expected_answer: str = dspy.InputField(desc="The expected answer to the question")
+    statements: List[str] = dspy.InputField(desc="PLN statements generated from sentences")
+    query: List[str] = dspy.InputField(desc="PLN query generated for the question")
+    proof: str = dspy.InputField(desc="The proof result from running the query")
+
+    # Outputs
+    score: float = dspy.OutputField(desc="Score from 0.0 to 1.0 indicating how well the proof answers the question")
+    feedback: str = dspy.OutputField(desc="Detailed feedback on what went wrong and how to improve the PLN statements/query")
+    improved_statements: List[str] = dspy.OutputField(desc="Improved PLN statements that would produce a better proof")
+    improved_query: List[str] = dspy.OutputField(desc="Improved PLN query that would better capture the question")
+
+
+class ProofEvaluator(dspy.Module):
+    def __init__(self):
+        self.evaluate = dspy.ChainOfThought(ProofEvaluatorSignature)
+
+    def forward(self, sentences, question, expected_answer, statements, query, proof):
+        return self.evaluate(
+            sentences=sentences,
+            question=question,
+            expected_answer=expected_answer,
+            statements=statements,
+            query=query,
+            proof=proof
+        )
 
 def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pred_name=None, pred_trace=None):
-    try: 
+    try:
         metta_handler = MorkHandler()
-        compare : dspy.Module = dspy.ChainOfThought("question, expected_answer, proof -> proof_exists_and_matches_expected_answer: float")
+        evaluator = ProofEvaluator()
 
         log = False
 
@@ -73,51 +92,63 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
 
         for stmt in pred.statements:
             if checkStmt(stmt) == 0.0:
-                return dspy.Prediction(score=score, feedback=
-                    f"""The statement {stmt} did not follow the right syntax. Follow the pln light spec {pln_spec}""")
+                return dspy.Prediction(
+                    score=score,
+                    feedback=f"""The statement {stmt} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
+                )
             score += 0.001
-            metta_handler.add_atom(stmt,log=log)
-        
+            metta_handler.add_atom(stmt, log=log)
+
         for query in pred.queries:
-            #if len(query) != 1:
-                #return dspy.Prediction(score=score, feedback="Found multiple queries where only one is expected.")
-            #score += 0.001
             if checkQuery(query[0]) == 0.0:
-                return dspy.Prediction(score=score, feedback=
-                    f"""The query {query[0]} did not follow the right syntax. Follow the pln light spec {pln_spec}""")
+                return dspy.Prediction(
+                    score=score,
+                    feedback=f"""The query {query[0]} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
+                )
             score += 0.001
 
         proofs = []
         for qr in pred.queries:
-            proofs.append(metta_handler.query(qr[0],log=log))
+            proofs.append(metta_handler.query(qr[0], log=log))
 
-
-        correct_matches = 0
+        total_score = 0.0
         feedback_details = []
-        for query, proof in zip(gold.queries, proofs):
-            result = compare(
-                question=query['question'],
-                expected_answer=query['expected_answer'],
-                proof=proof
+
+        for q, query_pln, proof in zip(gold.queries, pred.queries, proofs):
+            evaluation = evaluator(
+                sentences=gold.sentences,
+                question=q['question'],
+                expected_answer=q['expected_answer'],
+                statements=pred.statements,
+                query=query_pln,
+                proof=str(proof)
             )
-            match = 0.0 if result.proof_exists_and_matches_expected_answer is None else result.proof_exists_and_matches_expected_answer
 
-            correct_matches += match
-            feedback_details.append(format_result(query, proof, result))
+            eval_score = 0.0 if evaluation.score is None else float(evaluation.score)
+            total_score += eval_score
 
-            if match < 0.7:
-                feedback_details.append(format_hint(gold.statements, query))
+            feedback_details.append(dedent(f"""
+                Question: '{q['question']}'
+                Expected: {q['expected_answer']}
+                Proof: {proof}
+                Score: {eval_score}
+                Feedback: {evaluation.feedback}
+                Improved statements: {evaluation.improved_statements}
+                Improved query: {evaluation.improved_query}
+            """))
 
         n = len(pred.queries)
-        score = max(correct_matches / n if n > 0 else 0.0,0.1)
+        final_score = max(total_score / n if n > 0 else 0.0, 0.1)
 
         return dspy.Prediction(
-            score=score,
-            feedback=f"Score: {correct_matches}/{n} questions matched. \n" + "\n".join(feedback_details)
+            score=final_score,
+            feedback=f"Score: {total_score:.2f}/{n} questions. \n" + "\n".join(feedback_details)
         )
     except Exception as e:
         print(pred)
-        print("Error occured in difficulty_metric:",e)
+        print("Error occured in difficulty_metric:", e)
+        traceback.print_exc()
+        return dspy.Prediction(score=0.0, feedback=f"Error: {e}")
 
 
 
@@ -154,11 +185,11 @@ if __name__ == '__main__':
     dspy.settings.configure(track_usage=True)
 
     module = NL2PLNModule()
-    module.load("programs/manual0.json")
+    module.load("programs/manualng3.json")
 
     puzzle_data = build_examples_from_file("data/sentences.json")
 
-    puzzle_data = [puzzle_data[0]]
+    puzzle_data = [puzzle_data[3]]
 
     score_sum = 0
     for puzzle in puzzle_data:
