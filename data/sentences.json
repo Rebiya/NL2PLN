@@ -1,7 +1,7 @@
 [
   {
     "sentences": [
-      "Max is a Dog."
+      "Max is a Dog"
     ],
     "statements": [
       "(: max_Dog (Dog max) (STV 1.0 1.0))"
@@ -10,7 +10,6 @@
       {
         "question": "What is max?",
         "query": "(: $prf ($What max) $tv)",
-        "rules": [],
         "expected_answer": "Max is a Dog."
       }
     ]
@@ -29,8 +28,24 @@
       {
         "question": "What attribute does food have that Bob likes?",
         "query": "(: $prf (And (Name $bob \"Bob\") (Likes $bob $food) (Food $food) ($attrib $food)) $tv)",
-        "rules": [],
         "expected_answer": "It's hot."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Whales are mammals that live in the ocean.",
+      "Animals that live in the ocean are marine animals.",
+      "Marine mammals are exposed to pollutant P.",
+      "Exposure to pollutant P increases the risk of Disease Z.",
+      "mammals are animals"
+    ],
+    "statements": [],
+    "queries": [
+      {
+        "question": "Are whales at risk of Dieseas Z?",
+        "query": "",
+        "expected_answer": "Whales are at risk."
       }
     ]
   },
@@ -52,16 +67,12 @@
     "queries": [
       {
         "question": "11.10.2025, What was Bob doing yesterday?",
-        "query": "(: $prf (And (DayOfDate swim_date_obj 10) (MonthOfDate swim_date_obj 10) (YearOfDate swim_date_obj 2025) (AgentOf $event bob_obj) (HappensOnDate $event swim_date_obj) (DescribesActivity $event $activity) (Name $activity $what_name) (Doing bob_obj $activity)) (STV 1.0 1.0))",
-        "rules": [
-          "(: event_activity_implies_doing (Implication (And (DescribesActivity $event $activity) (AgentOf $event $agent)) (Doing $agent $activity)) (STV 1.0 1.0))"
-        ],
+        "query": "(: $prf (And (DayOfDate swim_date_obj 10) (MonthOfDate swim_date_obj 10) (YearOfDate swim_date_obj 2025) (AgentOf $event bob_obj) (HappensOnDate $event swim_date_obj) (DescribesActivity $event $activity) (Name $activity $what_name) (Name $bob_obj \"Bob\") (AgentOf $event $bob_obj)) (STV 1.0 1.0))",
         "expected_answer": "Bob was swimming"
       },
       {
         "question": "11.10.2025, When was Bob swimming?",
         "query": "(: $prf (And (SwimmingEvent $event) (AgentOf $event bob_obj) (HappensOnDate $event $date) (DayOfDate $date $day) (MonthOfDate $date $month)) (STV 1.0 1.0))",
-        "rules": [],
         "expected_answer": "Yesterday"
       }
     ]
