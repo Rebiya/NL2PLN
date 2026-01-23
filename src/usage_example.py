@@ -1,4 +1,4 @@
-from pettachainer import PeTTaChainer
+from pettachainer.pettachainer import PeTTaChainer
 from nl2pln import NL2PLNModule
 
 import dspy
@@ -17,7 +17,7 @@ dspy.settings.configure(track_usage=True)
 metta_handler = PeTTaChainer()
 
 training_module = NL2PLNModule()
-training_module.load("programs/sauto11_condensed.json")
+training_module.load("src/nl2plnModuleJan2026.json")
 
 module = training_module.nl2pln
 

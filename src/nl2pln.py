@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from typing import List
 from textwrap import dedent
 from cleanPLN import checkStmt, checkQuery, checkImpl, balance_parentheses
-from pettachainer import PeTTaChainer
+from pettachainer.pettachainer import PeTTaChainer
 
 class NL2PLNModule(dspy.Module):
     def __init__(self):
@@ -192,8 +192,7 @@ if __name__ == '__main__':
     dspy.settings.configure(track_usage=True)
 
     module = NL2PLNModule()
-    #module.load("programs/sauto1_andres.json")
-    module.load("programs/sauto11_condensed.json")
+    module.load("src/nl2plnModuleJan2026.json")
 
     #puzzle_data = build_examples_from_file("data/andres.json")
     #puzzle_data = build_examples_from_file("data/counting.json")

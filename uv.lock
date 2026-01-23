@@ -2384,7 +2384,7 @@ wheels = [
 [[package]]
 name = "petta"
 version = "0.1.0"
-source = { editable = "../StablePetta" }
+source = { editable = "../PeTTa" }
 dependencies = [
     { name = "janus-swi" },
 ]
@@ -2401,7 +2401,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "petta", editable = "../StablePetta" }]
+requires-dist = [{ name = "petta", editable = "../PeTTa" }]
 
 [[package]]
 name = "pillow"
