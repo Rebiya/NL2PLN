@@ -1923,17 +1923,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mm2chainer"
-version = "0.1.0"
-source = { editable = "../MM2Chainer" }
-dependencies = [
-    { name = "petta" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "petta", editable = "../StablePetta" }]
-
-[[package]]
 name = "multidict"
 version = "6.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2078,7 +2067,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "dspy" },
     { name = "mlflow" },
-    { name = "mm2chainer" },
+    { name = "pettachainer" },
     { name = "pytest" },
 ]
 
@@ -2086,7 +2075,7 @@ dependencies = [
 requires-dist = [
     { name = "dspy", specifier = ">=3.0.4" },
     { name = "mlflow", specifier = ">=3.6.0" },
-    { name = "mm2chainer", editable = "../MM2Chainer" },
+    { name = "pettachainer", editable = "../PeTTaChainer" },
     { name = "pytest", specifier = ">=9.0.1" },
 ]
 
@@ -2402,6 +2391,17 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "janus-swi" }]
+
+[[package]]
+name = "pettachainer"
+version = "0.1.0"
+source = { editable = "../PeTTaChainer" }
+dependencies = [
+    { name = "petta" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "petta", editable = "../StablePetta" }]
 
 [[package]]
 name = "pillow"

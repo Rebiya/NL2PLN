@@ -64,4 +64,4 @@ def checkQuery(expr: str) -> float:
     return _run_petta_check(expr, pattern, value_if_var=1.0, value_if_nonvar=0.0)
 
 if __name__ == "__main__":
-    print(checkStmt("(: prf foo (STV 1.0 1.0))"))
+    print(checkStmt("(: prf foo (STV 1.0 1.0)"))

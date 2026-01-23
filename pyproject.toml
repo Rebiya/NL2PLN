@@ -7,9 +7,9 @@ requires-python = ">=3.10"
 dependencies = [
     "dspy>=3.0.4",
     "mlflow>=3.6.0",
-    "mm2chainer",
     "pytest>=9.0.1",
+    "pettachainer",
 ]
 
 [tool.uv.sources]
-mm2chainer = { path = "../MM2Chainer", editable = true }
+pettachainer = { path = "../PeTTaChainer", editable = true }

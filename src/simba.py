@@ -3,13 +3,10 @@ import dspy
 import json
 import mlflow
 from pprint import pformat
-from dspy.teleprompt import GEPA
+from dspy.teleprompt import SIMBA
 from dspy.utils.callback import BaseCallback
 
 from nl2pln import NL2PLNModule , difficulty_metric , build_examples_from_file
-
-import logging
-logger = logging.getLogger(dspy.teleprompt.gepa.gepa.__name__)
 
 # --------------------------------------------------------------------------- #
 #  LM configuration                                                           #
@@ -17,8 +14,10 @@ logger = logging.getLogger(dspy.teleprompt.gepa.gepa.__name__)
 #model = "openrouter/z-ai/glm-4.5"
 #model = "cerebras/gpt-oss-120b"
 #model = "openrouter/deepseek/deepseek-v3.2"
-model = "openrouter/moonshotai/kimi-k2-0905:exacto"
+#model = "moonshotai/kimi-k2-0905:exacto"
 #model = "openrouter/openai/gpt-5.1"
+#model = "openrouter/google/gemini-3-pro-preview"
+model = "openrouter/google/gemini-3-flash-preview"
 optmodel = model
 
 lm = dspy.LM(model)
@@ -48,31 +47,29 @@ if tracking_uri:
         log_traces_from_compile=True  # Track program traces during optimization
     )
 
-dataset = build_examples_from_file("data/sentences.json")
-
-#shutil.rmtree('gepa_logs')
-teleprompter = GEPA(metric=difficulty_metric
-                   ,reflection_lm=dspy.LM(model,temperature=1.0)
-                   ,num_threads=10
-                   ,max_full_evals=6
-                   ,reflection_minibatch_size=1
-                   ,track_stats=True
-                   ,track_best_outputs=True
-                    #,log_dir='gepa_logs'
-                   )
+#dataset = build_examples_from_file("data/sentences.json")
+dataset = build_examples_from_file("data/andres.json")
 
 module = NL2PLNModule()
+module.load("programs/auto0_andres.json")
 
-i = 3
-module.load(f"programs/manualng{i - 1}.json")
+for i in range(0,2):
 
-trainset = dataset[:(i + 1)]
-valset = dataset[:(i + 1)]
-module = teleprompter.compile(
-    module,
-    trainset=trainset,
-    valset=valset,
-)
-print(pformat(module.detailed_results, width=100, indent=2))
+    teleprompter = SIMBA(
+        metric=difficulty_metric,
+        prompt_model=dspy.LM(optmodel, temperature=1.0),
+        bsize=i+1,
+        num_threads=10,
+    )
 
-module.save(f"programs/manualng{i}.json")
+    if i > 1:
+        module.load(f"programs/sauto{i - 1}_andres.json")
+
+    #trainset = [dataset[i]]
+    trainset = dataset[:(i + 1)]
+    module = teleprompter.compile(
+        module,
+        trainset=trainset,
+    )
+
+    module.save(f"programs/sauto{i}_andres.json")

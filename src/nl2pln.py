@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from typing import List
 from textwrap import dedent
 from cleanPLN import checkStmt, checkQuery, checkImpl, balance_parentheses
-from mm2chainer import MorkHandler
+from pettachainer import PeTTaChainer
 
 class NL2PLNModule(dspy.Module):
     def __init__(self):
@@ -32,7 +32,7 @@ A pln light statment has the following form:
 PRF can be either a specific name or a varaible $prf in the case of queries.
 TYPE can be one of:
     A Predicate applied to on or more objects (Predicate x y)
-    Which can be combined using And Or Implication.
+    Which can be combined using And Or Implication LikelierThan.
         Example: (And (Predicate1 x) (Predicate2 x))
     Statments should have variables $var only inside Implications.
     Variables in the premises are universally quantified.
@@ -42,6 +42,12 @@ TYPE can be one of:
         Example: ($pred x) / (Pred $x)
 TRUTH_VALUE can be either (STV strength confidence) with strenght and confidence between 0 and 1
             or a variable $tv in the case of queries.
+"""
+functions = """
+There exist a hardcoded CPU predicate whos first argument is an arithmetric operator like < <= + - * /
+which should only be used in the premises of an implication.
+Example: (Implication (And (Cardinality dogs $x) (Cardinality cats $y) (CPU + ($x $y) $t)) (Cardinality dogsPlusCats $t))
+Compared to normal predicetes who's existed is check in the knowledge base the CPU predicate is checked by running the function.
 """
 
 class ProofEvaluatorSignature(dspy.Signature):
@@ -81,7 +87,7 @@ class ProofEvaluator(dspy.Module):
 
 def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pred_name=None, pred_trace=None):
     try:
-        metta_handler = MorkHandler()
+        metta_handler = PeTTaChainer()
         evaluator = ProofEvaluator()
 
         log = False
@@ -97,7 +103,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
                     feedback=f"""The statement {stmt} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
                 )
             score += 0.001
-            metta_handler.add_atom(stmt, log=log)
+            metta_handler.add_atom(stmt)
 
         for query in pred.queries:
             if checkQuery(query[0]) == 0.0:
@@ -109,7 +115,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
 
         proofs = []
         for qr in pred.queries:
-            proofs.append(metta_handler.query(qr[0], log=log))
+            proofs.append(metta_handler.query(qr[0]))
 
         total_score = 0.0
         feedback_details = []
@@ -178,18 +184,22 @@ if tracking_uri:
 
 if __name__ == '__main__':
     #model = "openrouter/openai/gpt-5.1"
-    model = "openrouter/deepseek/deepseek-v3.2"
+    #model = "openrouter/deepseek/deepseek-v3.2"
     #model = "cerebras/gpt-oss-120b"
+    model = "openrouter/google/gemini-3-flash-preview"
 
     dspy.configure(lm=dspy.LM(model,temperature=1.0, max_tokens=20000))
     dspy.settings.configure(track_usage=True)
 
     module = NL2PLNModule()
-    module.load("programs/manualng3.json")
+    #module.load("programs/sauto1_andres.json")
+    module.load("programs/sauto11_condensed.json")
 
+    #puzzle_data = build_examples_from_file("data/andres.json")
+    #puzzle_data = build_examples_from_file("data/counting.json")
     puzzle_data = build_examples_from_file("data/sentences.json")
 
-    puzzle_data = [puzzle_data[3]]
+    puzzle_data = puzzle_data[0:17]
 
     score_sum = 0
     for puzzle in puzzle_data:
