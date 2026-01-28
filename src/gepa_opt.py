@@ -21,7 +21,8 @@ logger = logging.getLogger(dspy.teleprompt.gepa.gepa.__name__)
 #model = "moonshotai/kimi-k2-0905:exacto"
 #model = "openrouter/openai/gpt-5.1"
 #model = "openrouter/google/gemini-3-pro-preview"
-model = "openrouter/google/gemini-3-flash-preview"
+#model = "openrouter/google/gemini-3-flash-preview"
+model = "openai/gpt-5.2"
 optmodel = model
 
 lm = dspy.LM(model)
@@ -52,7 +53,8 @@ if tracking_uri:
     )
 
 #dataset = build_examples_from_file("data/sentences.json")
-dataset = build_examples_from_file("data/andres.json")
+#dataset = build_examples_from_file("data/andres.json")
+dataset = build_examples_from_file("data/counting.json")
 
 total_metric_calls = 100
 
@@ -60,7 +62,7 @@ total_metric_calls = 100
 
 module = NL2PLNModule()
 
-for i in range(0,2):
+for i in range(0,1):
 
     teleprompter = GEPA(metric=difficulty_metric
                    ,reflection_lm=dspy.LM(model,temperature=1.0)
@@ -74,7 +76,7 @@ for i in range(0,2):
                    )
 
     if i > 1:
-        module.load(f"programs/auto{i - 1}_andres.json")
+        module.load(f"programs/auto{i - 1}_cnting.json")
 
     #trainset = [dataset[i]]
     trainset = dataset[:(i + 1)]
@@ -86,9 +88,9 @@ for i in range(0,2):
     )
 
     print(pformat(module.detailed_results, width=300, indent=2))
-    with open(f"programs/auto{i}dr_andres.json", "w") as f:
+    with open(f"programs/auto{i}dr_cnting.json", "w") as f:
         f.write(str(module.detailed_results))
-    module.save(f"programs/auto{i}_andres.json")
+    module.save(f"programs/auto{i}_cnting.json")
 
     passed = False
     for val_scores in module.detailed_results.val_subscores:

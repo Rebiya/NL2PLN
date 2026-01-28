@@ -17,7 +17,8 @@ from nl2pln import NL2PLNModule , difficulty_metric , build_examples_from_file
 #model = "moonshotai/kimi-k2-0905:exacto"
 #model = "openrouter/openai/gpt-5.1"
 #model = "openrouter/google/gemini-3-pro-preview"
-model = "openrouter/google/gemini-3-flash-preview"
+#model = "openrouter/google/gemini-3-flash-preview"
+model = "openai/gpt-5.2"
 optmodel = model
 
 lm = dspy.LM(model)
@@ -48,28 +49,39 @@ if tracking_uri:
     )
 
 #dataset = build_examples_from_file("data/sentences.json")
-dataset = build_examples_from_file("data/andres.json")
+#dataset = build_examples_from_file("data/andres.json")
+dataset = build_examples_from_file("data/counting.json")
 
 module = NL2PLNModule()
-module.load("programs/auto0_andres.json")
+#module.load("programs/auto0_andres.json")
 
-for i in range(0,2):
+teleprompter = SIMBA(
+    metric=difficulty_metric,
+    prompt_model=dspy.LM(optmodel, temperature=1.0),
+    bsize=1,
+    num_threads=10,
+)
 
-    teleprompter = SIMBA(
-        metric=difficulty_metric,
-        prompt_model=dspy.LM(optmodel, temperature=1.0),
-        bsize=i+1,
-        num_threads=10,
-    )
+module = teleprompter.compile(module,trainset=dataset,)
+module.save(f"programs/counting.json")
 
-    if i > 1:
-        module.load(f"programs/sauto{i - 1}_andres.json")
-
-    #trainset = [dataset[i]]
-    trainset = dataset[:(i + 1)]
-    module = teleprompter.compile(
-        module,
-        trainset=trainset,
-    )
-
-    module.save(f"programs/sauto{i}_andres.json")
+#for i in range(0,2):
+#
+#    teleprompter = SIMBA(
+#        metric=difficulty_metric,
+#        prompt_model=dspy.LM(optmodel, temperature=1.0),
+#        bsize=i+1,
+#        num_threads=10,
+#    )
+#
+#    if i > 1:
+#        module.load(f"programs/sauto{i - 1}_andres.json")
+#
+#    #trainset = [dataset[i]]
+#    trainset = dataset[:(i + 1)]
+#    module = teleprompter.compile(
+#        module,
+#        trainset=trainset,
+#    )
+#
+#    module.save(f"programs/sauto{i}_andres.json")
