@@ -1,0 +1,26 @@
+[
+  {
+    "sentences": [
+      "There is a House with 2 rooms.",
+      "Room 1 contains 2 dogs.",
+      "Room 2 contains 3 dogs.",
+      ""
+    ],
+    "queries": [
+      {
+        "question": "How many dogs are there in the house.",
+        "expected_answer": "There are 5 dogs in the house."
+      }
+    ]
+  }
+]
+
+
+(Set obj)
+(Cardinlity 2 obj)
+(ElemType obj Dog)
+
+(In Room obj)
+
+
+($Pred ojb) (Set ojb) (Member x ojb) -> ($Pred x)

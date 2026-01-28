@@ -31,7 +31,7 @@
     ],
     "queries": [
       {
-        "question": "Are whales at risk of Dieseas Z?",
+        "question": "Are whales at risk of Disease Z?",
         "expected_answer": "Whales are at risk."
       }
     ]

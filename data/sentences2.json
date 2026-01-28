@@ -1,0 +1,41 @@
+[
+  ,
+  {
+    "sentences": [
+      "I've been in many fights and hated every second of it."
+    ],
+    "statements": [
+      "(: i_pronoun (Pronoun i) (STV 0.9 0.9))",
+      "(: fights_are_fights (Fight fights) (STV 0.9 0.9))",
+      "(: fights_are_plural (Plural fights) (STV 0.9 0.9))",
+      "(: fights_are_many (Many fights) (STV 0.9 0.9))",
+      "(: be_in_event_assert (BeIn be_in_event_1) (STV 0.9 0.9))",
+      "(: be_in_agent_i (Agent be_in_event_1 i) (STV 0.9 0.9))",
+      "(: be_in_theme_fights (Theme be_in_event_1 fights) (STV 0.9 0.9))",
+      "(: be_in_past (Past be_in_event_1) (STV 0.9 0.9))",
+      "(: hate_event_assert (Hate hate_event_1) (STV 0.9 0.9))",
+      "(: hate_experiencer_i (Experiencer hate_event_1 i) (STV 0.9 0.9))",
+      "(: hate_theme_fights (Theme hate_event_1 fights) (STV 0.9 0.9))",
+      "(: hate_past (Past hate_event_1) (STV 1.0 1.0))",
+      "(: it_is_pronoun (Pronoun it) (STV 1.0 1.0))",
+      "(: it_similar_to_fights (Similarity it fights) (STV 0.9 0.9))",
+      "(: every_sec_of_fight_i_hate (Implication (And (Time $t) (Second $t) (Fight $f) (During $t $f)) (And (Hate $h) (Experiencer $h i) (Theme $h $f))) (STV 0.9 0.9))"
+    ],
+    "queries": [
+      {
+        "question": "What do I hate?",
+        "query": "(: $prf (And (Pronoun i) (Hate $h) (Experiencer $h i) (Theme $h $x)) $tv)",
+        "rules": [],
+        "expected_answer": "I hate fights."
+      },
+      {
+        "question": "Do I hate fighting a lot?",
+        "query": "(: $prf (And (Pronoun i) (Hate $h) (Fight $f) (Experiencer $h i) (Theme $h $f) (ALot $h)) $tv)",
+        "rules": [
+          "(: every_sec_implies_alot (Implication (And ($activity $a) (Implication (And (Time $t) (Second $t) ($activity $a) (During $t $a)) (And ($emotion $e) (Experiencer $e $i) (Theme $e $a)))) (And ($emotion $ne) (Experiencer $ne $i) (Theme $en $a) (ALot $ne))) (STV 0.8 0.8))"
+        ],
+        "expected_answer": "Yes"
+      }
+    ]
+  }
+]

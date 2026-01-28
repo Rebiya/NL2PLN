@@ -1,0 +1,38 @@
+[
+{
+    "sentences": [
+      "Whales are mammals that live in the ocean.",
+      "Animals that live in the ocean are marine animals.",
+      "Marine mammals are exposed to pollutant P.",
+      "Exposure to pollutant P increases the risk of Disease Z.",
+      "mammals are animals"
+    ],
+    "queries": [
+      {
+        "question": "Are whales at risk of Disease Z?",
+        "expected_answer": "Whales are at risk."
+      }
+    ]
+},
+{
+    "sentences": [
+       "River A reaches the ocean in coastal bay Bay-1.",
+       "Costal bays have river runoff if a river reaches them",
+       "Coastal bays with river runoff have high levels of pollutant P, exposing animals living there to pollutant P.",
+       "Marine animals exposed to pollutant P have an increased risk of Disease Z.",
+       "Dolphins are marine mammals that live in coastal bays, including Bay-1.",
+       "Mollusks contain high doses of substance S.",
+       "Eating substance S is known to eliminate the risk of Disease Z.",
+       "The only predator of mollusks in Bay-1 are dolphins.",
+       "Tuna are fish that sometimes enter coastal bays, including Bay-1.",
+       "Predators eat their prey.",
+       "mammals are animals"
+    ],
+    "queries": [
+      {
+        "question":"Are dolphins in Bay-1 at higher risk of Disease Z than tuna in Bay-1?",
+        "expected_answer":"Dolphins in Bay-1 are not at higher risk of Diseaze Z than tuna in Bay-1"
+      }
+    ]
+}
+]

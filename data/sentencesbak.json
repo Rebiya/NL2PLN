@@ -1,0 +1,388 @@
+[
+  {
+    "sentences": [
+      "Max is a Dog"
+    ],
+    "statements": [
+      "(: max_Dog (Dog max) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "What is max?",
+        "query": "(: $prf ($What max) $tv)",
+        "expected_answer": "Max is a Dog."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob likes hot food."
+    ],
+    "statements": [
+      "(: bob_name (Name bob_obj \"Bob\") (STV 1.0 1.0))",
+      "(: food (Food hot_food) (STV 1.0 1.0))",
+      "(: hot (Hot hot_food) (STV 1.0 1.0))",
+      "(: likes (Likes bob_obj hot_food) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "What attribute does food have that Bob likes?",
+        "query": "(: $prf (And (Name $bob \"Bob\") (Likes $bob $food) (Food $food) ($attrib $food)) $tv)",
+        "expected_answer": "It's hot."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Whales are mammals that live in the ocean.",
+      "Animals that live in the ocean are marine animals.",
+      "Marine mammals are exposed to pollutant P.",
+      "Exposure to pollutant P increases the risk of Disease Z.",
+      "mammals are animals"
+    ],
+    "statements": [],
+    "queries": [
+      {
+        "question": "Are whales at risk of Dieseas Z?",
+        "query": "",
+        "expected_answer": "Whales are at risk."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "10.10.2025, Bob went swimming today."
+    ],
+    "statements": [
+      "(: bob_name (Name bob_obj \"Bob\") (STV 1.0 1.0))",
+      "(: swim_date_day (DayOfDate swim_date_obj 10) (STV 1.0 1.0))",
+      "(: swim_date_month (MonthOfDate swim_date_obj 10) (STV 1.0 1.0))",
+      "(: swim_date_year (YearOfDate swim_date_obj 2025) (STV 1.0 1.0))",
+      "(: swim_event (SwimmingEvent swim_event_obj) (STV 1.0 1.0))",
+      "(: swim_event_agent (AgentOf swim_event_obj bob_obj) (STV 1.0 1.0))",
+      "(: swim_event_activity (DescribesActivity swim_event_obj swimming_activity_obj) (STV 1.0 1.0))",
+      "(: swimming_activity_name (Name swimming_activity_obj \"Swimming\") (STV 1.0 1.0))",
+      "(: swim_event_time (HappensOnDate swim_event_obj swim_date_obj) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "11.10.2025, What was Bob doing yesterday?",
+        "query": "(: $prf (And (DayOfDate swim_date_obj 10) (MonthOfDate swim_date_obj 10) (YearOfDate swim_date_obj 2025) (AgentOf $event bob_obj) (HappensOnDate $event swim_date_obj) (DescribesActivity $event $activity) (Name $activity $what_name) (Name $bob_obj \"Bob\") (AgentOf $event $bob_obj)) (STV 1.0 1.0))",
+        "expected_answer": "Bob was swimming"
+      },
+      {
+        "question": "11.10.2025, When was Bob swimming?",
+        "query": "(: $prf (And (SwimmingEvent $event) (AgentOf $event bob_obj) (HappensOnDate $event $date) (DayOfDate $date $day) (MonthOfDate $date $month)) (STV 1.0 1.0))",
+        "expected_answer": "Yesterday"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob and Anna like hiking.",
+      "They often go together."
+    ],
+    "statements": [
+      "(: bob_name (Name bob_obj \"Bob\") (STV 1.0 1.0))",
+      "(: anna_name (Name anna_obj \"Anna\") (STV 1.0 1.0))",
+      "(: hiking_activity (Hiking hiking_obj) (STV 1.0 1.0))",
+      "(: bob_likes_hiking (Likes bob_obj hiking_obj) (STV 0.9 0.9))",
+      "(: anna_likes_hiking (Likes anna_obj hiking_obj) (STV 0.9 0.9))",
+      "(: hiking_event (Hiking hiking_event) (STV 1.0 1.0))",
+      "(: anna_goes_hiking (Attends hiking_event anna_obj) (STV 0.9 0.9))",
+      "(: bob_goes_hiking (Attends hiking_event bob_obj) (STV 0.9 0.9))",
+      "(: hiking_happens_often (Often hiking_event) (STV 0.9 0.9))"
+    ],
+    "queries": [
+      {
+        "question": "What is the name of the people that like hiking?",
+        "query": "(: $prf (And (Likes $person hiking_obj) (Name $person $name)) $tv)",
+        "expected_answer": "Bob and Anna."
+      },
+      {
+        "question": "Who goes hiking?",
+        "query": "(: $prf (And (Hiking $event) (Attends $event $person) (Name $person $name)) $tv)",
+        "expected_answer": "Bob and Anna."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "There is a bright red ball and a bright light."
+    ],
+    "statements": [
+      "(: ball_type (Ball ball_obj) (STV 1.0 1.0))",
+      "(: ball_color (BrightRed ball_obj) (STV 1.0 1.0))",
+      "(: light_type (Light light_obj) (STV 1.0 1.0))",
+      "(: light_bright (Bright light_obj) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "What bright objects do we have?",
+        "query": "(: $prf (Bright $object) $tv)",
+        "rules": ["(: brightred_decompose (Implication (BrightRed $obj) (And (Color $c) (Red $c) (Bright $c) (HasColor $obj $c))) (STV 1.0 1.0))"],
+        "expected_answer": "A light and a red color"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob always played tennis."
+    ],
+    "statements": [
+      "(: bob_name (Name bob_obj Bob) (STV 1.0 1.0))",
+      "(: tennis (Name tennis_obj Tennis) (STV 1.0 1.0))",
+      "(: bob_play_tennis (Play bob_obj tennis_obj) (STV 0.1 0.6))"
+    ],
+    "queries": [
+      {
+        "question": "What is the probability that Bob is playing tennis now?",
+        "query": "(: $prf (And (Name $bob_obj Bob) (Name $tennis_obj Tennis) (Play $bob_obj $tennis_obj)) $tv)",
+        "rules": [],
+        "expected_answer": "The probablity should be around 5-20% with confidence that is not to high"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "The Knife is long and sharp as a kitchen knife but short and blunt as a sashimi knife."
+    ],
+    "statements": [
+      "(: knife_type (Knife knife_obj) (STV 1.0 1.0))",
+      "(: kitchen_knife_type (KitchenKnife kitchen_knife_obj) (STV 1.0 1.0))",
+      "(: sashimi_knife_type (SashimiKnife sashimi_knife_obj) (STV 1.0 1.0))",
+      "(: knife_longer_kitchen (LongerThan knife_obj kitchen_knife_obj) (STV 0.9 0.8))",
+      "(: knife_sharper_kitchen (SharperThan knife_obj kitchen_knife_obj) (STV 0.9 0.8))",
+      "(: knife_shorter_sashimi (ShorterThan knife_obj sashimi_knife_obj) (STV 0.9 0.8))",
+      "(: knife_blunter_sashimi (BlunterThan knife_obj sashimi_knife_obj) (STV 0.9 0.8))"
+    ],
+    "queries": [
+      {
+        "question": "Is the Knife long as compared to a different knife?",
+        "query": "(: $prf (And (LongerThan knife_obj $other) (Knife $other)) $tv)",
+        "rules": ["(: kitchen_knife_decompose (Implication (KitchenKnife $kife) (And (Knife $kife) (Kitched $kitchen) (UsedIn $kife $kitchen))) (STV 1.0 1.0))"],
+        "expected_answer": "Yes compared to a kitchen knife it is long."
+      },
+      {
+        "question": "Are kitchen knifes shorter then sashimi knives?",
+        "query": "(: $prf (ShorterThan kitchen_knife_obj sashimi_knife_obj) $tv)",
+        "rules": [
+          "(: shorter_transfers (Implication (And (LongerThan $a $b) (ShorterThan $a $c)) (ShorterThan $b $c)) (STV 0.9 0.9))"
+        ],
+        "expected_answer": "Yes, kitchen knifes are shorter then sashimi knives."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "The meeting won't happen unless everyone agrees."
+    ],
+    "statements": [
+      "(: meeting_instance (Meeting meeting_obj) (STV 1.0 1.0))",
+      "(: everyone_group (Group everyone_group_obj) (STV 1.0 1.0))",
+      "(: meeting_requires_agreement (RequiresAgreement meeting_obj everyone_group_obj) (STV 1.0 1.0))",
+      "(: meeting_dependency (Implication (Happens meeting_obj) (Agrees everyone_group_obj meeting_obj)) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "Who has to agree for the meeting to happen?",
+        "query": "(: $prf (RequiresAgreement meeting_obj $group) $tv)",
+        "rules": [],
+        "expected_answer": "Everyone that is somewhat related to it."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "There are 10 humans that can fly."
+    ],
+    "statements": [
+      "(: flying_humans_can (Implication (Member $person flying_humans_obj) (CanFly $person)) (STV 0.9 0.9))",
+      "(: flying_humans_count (Cardinality flying_humans_obj 10) (STV 0.9 0.8))"
+    ],
+    "queries": [
+      {
+        "question": "How many humans are flying?",
+        "query": "(: $prf (CountRange (lambda ($person) (And (Human $person) (Flying $person))) 0 $max) $tv)",
+        "rules": [],
+        "expected_answer": "No proof possible."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "10.10.2025, Bob went away in february."
+    ],
+    "statements": [
+      "(: reference_day (DayOfDate current_date_obj 10) (STV 1.0 1.0))",
+      "(: reference_month (MonthOfDate current_date_obj 10) (STV 1.0 1.0))",
+      "(: reference_year (YearOfDate current_date_obj 2025) (STV 1.0 1.0))",
+      "(: bob_name (Name bob_obj \"Bob\") (STV 1.0 1.0))",
+      "(: away_month (MonthOfDate away_date_obj 2) (STV 1.0 1.0))",
+      "(: away_year (YearOfDate away_date_obj 2025) (STV 1.0 1.0))",
+      "(: bob_went_away (AtTime (WentAway bob_obj) away_date_obj) (STV 1.0 1.0))",
+      "(: months_between (MonthsBetween away_date_obj current_date_obj 8) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "10.10.2025, How many months ago was it that bob went away?",
+        "query": "(: $prf (MonthsBetween away_date_obj current_date_obj $months) $tv)",
+        "rules": [],
+        "expected_answer": "8"
+      },
+      {
+        "question": "10.10.2025, What year was it when bob went away?",
+        "query": "(: $prf (YearOfDate away_date_obj $year) $tv)",
+        "rules": [],
+        "expected_answer": "2025"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Mark, Bob and Anna are helping each other with homework."
+    ],
+    "statements": [
+      "(: mark_name (Name mark_obj \"Mark\") (STV 1.0 1.0))",
+      "(: bob_name (Name bob_obj \"Bob\") (STV 1.0 1.0))",
+      "(: anna_name (Name anna_obj \"Anna\") (STV 1.0 1.0))",
+      "(: mark_help_bob (HelpsWithHomework mark_obj bob_obj) (STV 0.9 0.9))",
+      "(: mark_help_anna (HelpsWithHomework mark_obj anna_obj) (STV 0.8 0.8))",
+      "(: bob_help_mark (HelpsWithHomework bob_obj mark_obj) (STV 0.8 0.8))",
+      "(: bob_help_anna (HelpsWithHomework bob_obj anna_obj) (STV 0.9 0.9))",
+      "(: anna_help_mark (HelpsWithHomework anna_obj mark_obj) (STV 0.9 0.9))",
+      "(: anna_help_bob (HelpsWithHomework anna_obj bob_obj) (STV 0.8 0.8))"
+    ],
+    "queries": [
+      {
+        "question": "Does Mark help Anna with homework?",
+        "query": "(: $prf (HelpsWithHomework mark_obj anna_obj) $tv)",
+        "rules": [],
+        "expected_answer": "Yes"
+      },
+      {
+        "question": "Who is providing help with homework?",
+        "query": "(: $prf (And (ProvidesHelp $helper $homework_obj) (Homework $homework_obj) (Name $helper $name)) $tv)",
+        "rules": [
+          "(: helps_means_provides (Implication (HelpsWithHomework $helper $recipient) (And (Homework $homework) (ProvidesHelp $helper $homework))) (STV 0.9 0.9))"
+        ],
+        "expected_answer": "Mark, Bob and Anna."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "The Dog has magical fur and a white tail."
+    ],
+    "statements": [
+      "(: dog_type (Dog dog_obj) (STV 1.0 1.0))",
+      "(: dog_fur (FurOf dog_obj fur_obj) (STV 1.0 1.0))",
+      "(: dog_tail (TailOf dog_obj tail_obj) (STV 1.0 1.0))",
+      "(: fur_magical (Magical fur_obj) (STV 1.0 1.0))",
+      "(: tail_white (Color tail_obj white_color) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "Is the dog magical?",
+        "query": "(: $prf (Magical dog_obj) $tv)",
+        "rules": [
+          "(: magical_fur_rule (Implication (And (FurOf $animal $fur) (Magical $fur)) (Magical $animal)) (STV 0.9 0.8))"
+        ],
+        "expected_answer": "Yes"
+      },
+      {
+        "question": "Is the dog white?",
+        "query": "(: $prf (Color dog_obj white_color) $tv)",
+        "rules": [
+          "(: tail_white_rule (Implication (And (TailOf $animal $tail) (Color $tail $color)) (Color $animal $color)) (STV 0.2 0.5))"
+        ],
+        "expected_answer": "Unclear. Part of it is so a maybe something along the lines of (STV 0.2 0.5) there is a low probabilty but we aren't sure."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob is behind the door."
+    ],
+    "statements": [
+      "(: bob_name (Name bob_obj \"Bob\") (STV 1.0 1.0))",
+      "(: door_object (Door door_obj) (STV 1.0 1.0))",
+      "(: bob_behind_door (Behind bob_obj door_obj) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "Where is Bob?",
+        "query": "(: $prf (Behind bob_obj $location) $tv)",
+        "rules": [],
+        "expected_answer": "Behind the door."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "I only eat vegetables on days when I exercise."
+    ],
+    "statements": [
+      "(: self_agent (Person self_obj) (STV 1.0 1.0))",
+      "(: vegetables_food (Vegetable vegetables_obj) (STV 1.0 1.0))",
+      "(: eats_only_when_exercise (Implication (EatsVegetables self_obj $day) (Exercises self_obj $day)) (STV 1.0 1.0))",
+      "(: only_when_fact (OnlyWhen (EatsVegetables self_obj $day) (Exercises self_obj $day)) (STV 1.0 1.0))"
+    ],
+    "queries": [
+      {
+        "question": "On which days do you only eat vegetables?",
+        "query": "(: $prf (OnlyWhen (EatsVegetables self_obj $day) $condition) $tv)",
+        "rules": [],
+        "expected_answer": "On days when I exercise."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob kicked the bucket."
+    ],
+    "statements": [
+      "(: bucket_is_bucket (Bucket bucket) (STV 0.9 0.9))",
+      "(: person_bob (Person bob) (STV 0.9 0.9))",
+      "(: kick_is_kick (Kick kick) (STV 0.9 0.9))",
+      "(: the_is_the (The the) (STV 0.9 0.9))",
+      "(: det_the_bucket (Determiner the bucket) (STV 0.9 0.9))",
+      "(: bob_kick (Agent kick bob) (STV 0.7 0.5))",
+      "(: kick_bucket (Theme kick bucket) (STV 0.7 0.5))",
+      "(: past_tense (PastTense past_tense) (STV 1.0 1.0))",
+      "(: tense_kick_past_tense (Tense kick past_tense) (STV 0.9 0.9))",
+      "(: kick_the_bucket_implies_die (Implication (And (Kick $k) (The $t) (Bucket $b) (Determiner $t $b) (Agent $k $x) (Theme $k $b) (Tense $k $tense)) (And (Die $d) (Agent $d $x) (Tense $d $tense))) (STV 0.8 0.8))"
+    ],
+    "queries": [
+      {
+        "question": "Did Bob kick anything?",
+        "query": "(: $prf (And (Person bob) (Kick $k) (Agent $k bob) (Theme $k $anything) (Tense $k past_tense)) $tv)",
+        "rules": [],
+        "expected_answer": "Yes Bob kicked the bucket, with a non-zero probability."
+      },
+      {
+        "question": "Did Bob die?",
+        "query": "(: $prf (And (Person bob) (Die $d) (Agent $d bob) (Tense $d past_tense)) $tv)",
+        "rules": [],
+        "expected_answer": "Yes Bob died, with a non-zero probability."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "A camera is a device that takes pictures (photographs)."
+    ],
+    "statements": [
+      "(: camera_is_device (Implication (Camera $x) (And (Device $x) (Picture $p) (Take $x $p))) (STV 0.9 0.9))",
+      "(: pic_photo (Equivalence (Picture $x) (Photograph $x)) (STV 0.7 0.7))"
+    ],
+    "queries": [
+      {
+        "question": "What do pictures also known as?",
+        "query": "(: $prf (Equivalence (Picture $x) ($aka $x)) $tv)",
+        "rules": [],
+        "expected_answer": "Photographs."
+      }
+    ]
+  }
+]
