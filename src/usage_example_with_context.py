@@ -28,19 +28,13 @@ def ollama_embed(text: str) -> list[float]:
     return resp["embedding"]
 
 
-def qdrant_collection_exists() -> bool:
+def qdrant_ensure_collection(vector_size: int) -> None:
     try:
         http_json("GET", f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}")
-        return True
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
-            return False
+            return
         raise
-
-
-def qdrant_ensure_collection(vector_size: int) -> None:
-    if qdrant_collection_exists():
-        return
     http_json(
         "PUT",
         f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}",
@@ -48,36 +42,14 @@ def qdrant_ensure_collection(vector_size: int) -> None:
     )
 
 
-def qdrant_upsert(point_id: str, vector: list[float], payload: dict) -> None:
-    http_json(
-        "PUT",
-        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}/points?wait=true",
-        {"points": [{"id": point_id, "vector": vector, "payload": payload}]},
-    )
-
-
-def qdrant_search(vector: list[float], limit: int = 5) -> list[dict]:
-    resp = http_json(
-        "POST",
-        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}/points/search",
-        {"vector": vector, "limit": limit, "with_payload": True},
-    )
-    return resp.get("result", [])
-
-
-def qdrant_delete_collection() -> None:
-    try:
-        http_json("DELETE", f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}")
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            return
-        raise
-
-
 def retrieve_context(sentence: str, top_k: int = 5) -> tuple[list[str], list[float]]:
     vector = ollama_embed(sentence)
     qdrant_ensure_collection(len(vector))
-    results = qdrant_search(vector, limit=top_k)
+    results = http_json(
+        "POST",
+        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}/points/search",
+        {"vector": vector, "limit": top_k, "with_payload": True},
+    ).get("result", [])
     context: list[str] = []
     for item in results:
         payload = item.get("payload", {})
@@ -92,7 +64,11 @@ def store_example(sentence: str, pln: list[str], vector: list[float] | None = No
         vector = ollama_embed(sentence)
         qdrant_ensure_collection(len(vector))
     payload = {"nl": sentence, "pln": pln}
-    qdrant_upsert(str(uuid.uuid4()), vector, payload)
+    http_json(
+        "PUT",
+        f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}/points?wait=true",
+        {"points": [{"id": str(uuid.uuid4()), "vector": vector, "payload": payload}]},
+    )
 
 
 data = [
@@ -130,7 +106,11 @@ for pln_query in pln_querys:
     print(f"Query: {pln_query} Result:")
     print(metta_handler.query(pln_query))
 
-qdrant_delete_collection()
+try:
+    http_json("DELETE", f"{QDRANT_URL}/collections/{QDRANT_COLLECTION}")
+except urllib.error.HTTPError as exc:
+    if exc.code != 404:
+        raise
 
 # Notes:
 # - This example embeds the NL sentence, stores nl -> pln in Qdrant, and retrieves
