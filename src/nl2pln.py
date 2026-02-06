@@ -65,15 +65,18 @@ class NL2PLNSingature(dspy.Signature):
     * **Variables may only appear inside Implications**, except in queries.
     * In an Implication:
 
-      * Variables appearing in the **premise** are **universally quantified**
-      * Variables appearing **only in the conclusion** are **existentially quantified**
+      * Variables appearing in the **Premises** are **universally quantified**
+      * Variables appearing **only in the Conclusions** are **existentially quantified**
 
     Example:
 
     ```
     (Implication
-        (Predicate1 $x $y)
-        (And (Predicate2 $y $z) (Predicate3 $z)))
+        (Premises
+            (Predicate1 $x $y))
+        (Conclusions
+            (Predicate2 $y $z)
+            (Predicate3 $z)))
     ```
 
     Here:
@@ -98,7 +101,7 @@ class NL2PLNSingature(dspy.Signature):
     There exists a special hardcoded predicate:
 
     ```
-    (Compute operator args result)
+    (Compute operator args -> result)
     ```
 
     Rules:
@@ -111,14 +114,48 @@ class NL2PLNSingature(dspy.Signature):
 
     ```
     (Implication
-        (And
+        (Premises
             (Cardinality dogs $x)
             (Cardinality cats $y)
-            (Compute + ($x $y) $t))
-        (Cardinality dogsPlusCats $t))
+            (Compute + ($x $y) -> $t))
+        (Conclusions
+            (Cardinality dogsPlusCats $t)))
     ```
 
-    ### 5. TRUTH_VALUE
+    Filtering example:
+
+    ```
+    (Compute > ($x $y) -> True)
+    ```
+
+    ### 5. FoldAll Predicate
+
+    There exists a special aggregation predicate:
+
+    ```
+    (FoldAll pattern value init fun -> out)
+    ```
+
+    Rules:
+
+    * `FoldAll` **may only appear in the Premises of an Implication**
+    * It finds all matches of `pattern` under current bindings
+    * For each match it evaluates `value` and folds that into an accumulator starting from `init`
+    * If there are no matches, the result is `init`
+    * Only `out` is exported to later premises/conclusions
+    * Prefer inline lambdas for fold functions, e.g. `(|-> ($acc $x) (+ $acc $x))`
+
+    Example:
+
+    ```
+    (Implication
+        (Premises
+            (FoldAll (Count $name $n) $n 0 (|-> ($acc $x) (+ $acc $x)) -> $total))
+        (Conclusions
+            (Count Total $total)))
+    ```
+
+    ### 6. TRUTH_VALUE
 
     TRUTH_VALUE is either:
 
@@ -132,12 +169,13 @@ class NL2PLNSingature(dspy.Signature):
 
     * A variable `$tv` **only in queries**
 
-    ### 6. Output Constraints
+    ### 7. Output Constraints
 
     * Always follow the exact syntax
     * Do not introduce undeclared constructs
     * Do not place variables outside allowed positions
     * Do not use `Compute` outside implication premises
+    * Do not use `FoldAll` outside implication premises
     * Ensure quantification rules are respected
 
     Produce only valid PLN light statements / queries.
@@ -208,18 +246,22 @@ TYPE can be one of:
     Which can be combined using And Or Implication LikelierThan.
         Example: (And (Predicate1 x) (Predicate2 x))
     Statments should have variables $var only inside Implications.
-    Variables in the premises are universally quantified.
-    Variables that appear only in the coclusion are existentially quantified.
-        Example: (Implication (Predicate1 $x $y) (And (Predicate2 $y $z) (Predicate3 $z))) [$x $y are universally quantified, $z is existentially quantified]
+    Variables in the Premises are universally quantified.
+    Variables that appear only in the Conclusions are existentially quantified.
+        Example: (Implication (Premises (Predicate1 $x $y)) (Conclusions (Predicate2 $y $z) (Predicate3 $z))) [$x $y are universally quantified, $z is existentially quantified]
     Queries can have variables at any location that a Predicate or Object could appear.
         Example: ($pred x) / (Pred $x)
 TRUTH_VALUE can be either (STV strength confidence) with strenght and confidence between 0 and 1
             or a variable $tv in the case of queries.
 
-There exist a hardcoded (Compute $f $args $res) Predicate whos first argument is an arithmetric operator like < <= + - * /
-which should only be used in the premises of an implication.
-Example: (Implication (And (Cardinality dogs $x) (Cardinality cats $y) (Compute + ($x $y) $t)) (Cardinality dogsPlusCats $t))
+There exists a hardcoded (Compute $f $args -> $res) Predicate whose first argument is an arithmetic operator like < <= + - * /
+which should only be used in the Premises of an Implication.
+Example: (Implication (Premises (Cardinality dogs $x) (Cardinality cats $y) (Compute + ($x $y) -> $t)) (Conclusions (Cardinality dogsPlusCats $t)))
 Compared to normal predicetes who's existed is check in the knowledge base the Compute predicate is checked by running the function/operator.
+
+There also exists (FoldAll $pattern $value $init $fun -> $out) for aggregations in Premises.
+`$value` controls what gets passed into the folding function for each match.
+Example: (Implication (Premises (FoldAll (Count $name $n) $n 0 (|-> ($acc $x) (+ $acc $x)) -> $total)) (Conclusions (Count Total $total)))
 """
 
 def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pred_name=None, pred_trace=None):

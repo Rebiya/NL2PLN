@@ -67,17 +67,18 @@ Semantics:
 Syntax:
 
 ```lisp
-(FoldAll pattern init fun -> out)
+(FoldAll pattern value init fun -> out)
 ```
 
 Semantics:
 
 1. Enumerate all matches of `pattern` under current outer bindings.
-2. Initialize accumulator `acc = init`.
-3. For each match, apply `fun(acc, value)` to get the next `acc`.
-4. If no matches are found, result is `init`.
-5. Pattern-match final accumulator against `out`.
-6. Match success: continue. Match failure: hard-fail this premise.
+2. For each match, evaluate `value` under that match binding.
+3. Initialize accumulator `acc = init`.
+4. For each projected value, apply `fun(acc, value)` to get the next `acc`.
+5. If no matches are found, result is `init`.
+6. Pattern-match final accumulator against `out`.
+7. Match success: continue. Match failure: hard-fail this premise.
 
 ### Scope and Binding Rules
 
@@ -106,13 +107,14 @@ Aggregation with local match variable:
 ```lisp
 (Implication
   (Premises
-    (Class $c)
-    (FoldAll (Enrolled $c $student) () AppendStudent -> $students))
+    (Count A $a)
+    (Count B $b)
+    (FoldAll (Count $name $n) $n 0 (|-> ($acc $x) (+ $acc $x)) -> $sum))
   (Conclusions
-    (ClassRoster $c $students)))
+    (Count Total $sum)))
 ```
 
-In the second example, `$c` is an outer constraint, `$student` is fold-local, and only `$students` escapes.
+In the second example, `$a`/`$b` are outer bindings, `$name`/`$n` are fold-local, and only `$sum` escapes.
 
 ## Non-Goals (This Draft)
 

@@ -104,3 +104,10 @@
 - 2026-02-06: Updated `pettachainer/metta/test.metta` assertions to concrete expected proofs (no silent pass/fail behavior).
 - 2026-02-06: Test run (from `PeTTaChainer/pettachainer/metta`): `petta test.metta`, all assertions passed, exit code `0`.
 - 2026-02-06: Test run (from `PeTTaChainer/pettachainer/metta`): `petta testlambda.metta`, exit code `0`.
+- 2026-02-06: Removed `AddCount` builtin helper from `pettachainer/metta/petta_chainer.metta`; FoldAll examples/tests now use inline lambdas.
+- 2026-02-06: Removed `pettachainer/metta/testlambda.metta` and folded lambda coverage into `pettachainer/metta/test.metta`.
+- 2026-02-06: Updated prompt/spec FoldAll examples to lambda form in `src/nl2pln.py` and `docs/pln-rule-semantics.md`.
+- 2026-02-06: Verification rerun: `petta test.metta` (pass), `python -m py_compile src/nl2pln.py` (pass), `pytest tests/test_cleanPLN.py -q` (`12 passed`).
+- 2026-02-06: Updated `FoldAllEval` runtime to source matches via `chainer` proofs instead of direct `match &kb`, so FoldAll can aggregate inferred matches.
+- 2026-02-06: Added regression coverage in `pettachainer/metta/test.metta` for folding over inferred predicate `Num`.
+- 2026-02-06: Verification rerun (from `PeTTaChainer/pettachainer/metta`): `petta test.metta`, all assertions passed, exit code `0`.
