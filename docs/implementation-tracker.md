@@ -27,10 +27,10 @@
 - [x] T2: Compile pipeline refactor in PeTTaChainer
   - Replace binary implication handling in `compile_`, `compileQuery`, `pretty`.
   - Preserve ordered premise evaluation and binding propagation.
-- [ ] T3: `Compute` hard-fail control semantics
+- [x] T3: `Compute` hard-fail control semantics
   - Remove legacy treatment requiring `Compute` as normal KB atom premise.
   - Keep TV unaffected by `Compute`.
-- [ ] T4: `FoldAll` implementation
+- [x] T4: `FoldAll` implementation
   - Outer bindings constrain pattern.
   - New pattern vars are local.
   - Zero matches return `init`.
@@ -65,3 +65,10 @@
 - 2026-02-06: Test run: `petta ../PeTTaChainer/pettachainer/metta/test.metta`, assertion passed, exit code `0`.
 - 2026-02-06: Completed T2 refactor for `compile_`, `compileQuery`, `checkStmt`, and `pretty` to new `Implication (Premises ...) (Conclusions ...)` shape.
 - 2026-02-06: Test run (from `PeTTaChainer/pettachainer/metta`): `petta test.metta`, assertion passed, exit code `0`.
+- 2026-02-06: Completed T3 by compiling `Compute` premises to direct `CPU` goals (no KB `Compute` fact bridge required).
+- 2026-02-06: Removed legacy runtime bridge rule from `pettachainer/metta/petta_chainer.metta`.
+- 2026-02-06: Test run (from `PeTTaChainer/pettachainer/metta`): `petta test.metta`, assertion passed, exit code `0`.
+- 2026-02-06: Hard-fail check: `petta /tmp/t3_hard_fail_check.metta`, assertion passed (`Count C 4` query returned `()`), exit code `0`.
+- 2026-02-06: Completed T4 by adding `FoldAll` compile mapping to `FoldAllEval` control goals and runtime evaluation in chainer.
+- 2026-02-06: Added `FoldAll` tests for aggregation (`Count Total 6`) and zero-match behavior (`Count MissingTotal 42`) in `pettachainer/metta/test.metta`.
+- 2026-02-06: Test run (from `PeTTaChainer/pettachainer/metta`): `petta test.metta`, all assertions passed, exit code `0`.
