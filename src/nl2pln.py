@@ -10,8 +10,10 @@ logger = logging.getLogger(__name__)
 
 from typing import List
 from textwrap import dedent
-from cleanPLN import checkStmt, checkQuery, checkImpl, balance_parentheses
-from pettachainer.pettachainer import PeTTaChainer
+from pettachainer import PeTTaChainer, check_query, check_stmt, get_language_spec
+
+pln_sec = get_language_spec(llm_focused=True)
+pln_spec = pln_sec
 
 class NL2PLNSingature(dspy.Signature):
     """Convert natural language to PLN light statements and queries.
@@ -101,7 +103,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
             return dspy.Prediction(score=score, feedback="No pln statements found")
 
         for stmt in pred.statements:
-            if checkStmt(stmt) == 0.0:
+            if check_stmt(stmt) == 0.0:
                 return dspy.Prediction(
                     score=score,
                     feedback=f"""The statement {stmt} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
@@ -110,7 +112,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
             metta_handler.add_atom(stmt)
 
         for query in pred.queries:
-            if checkQuery(query[0]) == 0.0:
+            if check_query(query[0]) == 0.0:
                 return dspy.Prediction(
                     score=score,
                     feedback=f"""The query {query[0]} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
