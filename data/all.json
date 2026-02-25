@@ -1,12 +1,12 @@
 [
   {
     "sentences": [
-      "There are 3 cats are in the park, all of these cats are cute."
+      "There are 3 cats in the park, all of these cats are cute."
     ],
     "queries": [
       {
         "question": "Are all cats cute?",
-        "expected_answer": "Only all the cats that are in the park are cute."
+        "expected_answer": "All the cats we know about are cute."
       },
       {
         "question": "Is there any cute cat in the park?",
