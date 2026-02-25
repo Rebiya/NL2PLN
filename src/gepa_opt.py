@@ -26,21 +26,7 @@ model = "openai/gpt-5.2"
 optmodel = model
 
 lm = dspy.LM(model)
-
-class PromptDumpCallback(BaseCallback):
-    def on_lm_start(self, **event):
-        call_id  = event.get("call_id")
-        messages   = event.get("inputs").get("messages")
-
-        record = {
-            "call_id": call_id,
-            "messages": messages,
-        }
-
-        with open("dspy_prompts.jsonl", "a", encoding="utf-8") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-dspy.configure(lm=lm,callbacks=[PromptDumpCallback()])
+dspy.configure(lm=lm)
 
 tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 if tracking_uri:
@@ -54,50 +40,70 @@ if tracking_uri:
 
 #dataset = build_examples_from_file("data/sentences.json")
 #dataset = build_examples_from_file("data/andres.json")
-dataset = build_examples_from_file("data/counting.json")
+#dataset = build_examples_from_file("data/counting.json")
+dataset = build_examples_from_file("data/all.json")
 
-total_metric_calls = 100
+total_metric_calls = 1000
 
 #shutil.rmtree('gepa_logs')
 
 module = NL2PLNModule()
+module.load("programs/simba_all2.json")
 
-for i in range(0,1):
+teleprompter = GEPA(metric=difficulty_metric
+               ,reflection_lm=dspy.LM(model)
+               ,num_threads=10
+               ,max_metric_calls=total_metric_calls
+               ,reflection_minibatch_size=16
+               ,track_stats=True
+               ,track_best_outputs=True
+               ,log_dir=f"gepa_logs_all"
+               ,gepa_kwargs={"stop_callbacks": [MaxMetricCallsStopper(total_metric_calls),ScoreThresholdStopper(0.9)]}
+               )
+module = teleprompter.compile(
+    module,
+    trainset=dataset,
+    valset=dataset,
+)
 
-    teleprompter = GEPA(metric=difficulty_metric
-                   ,reflection_lm=dspy.LM(model,temperature=1.0)
-                   ,num_threads=10
-                   ,max_metric_calls=total_metric_calls
-                   ,reflection_minibatch_size=3
-                   ,track_stats=True
-                   ,track_best_outputs=True
-                   ,log_dir=f"gepa_logs{i}"
-                   ,gepa_kwargs={"stop_callbacks": [MaxMetricCallsStopper(total_metric_calls),ScoreThresholdStopper(0.9)]}
-                   )
+module.save(f"programs/simba_all2_gepa.json")
 
-    if i > 1:
-        module.load(f"programs/auto{i - 1}_cnting.json")
-
-    #trainset = [dataset[i]]
-    trainset = dataset[:(i + 1)]
-    valset = dataset[:(i + 1)]
-    module = teleprompter.compile(
-        module,
-        trainset=trainset,
-        valset=valset,
-    )
-
-    print(pformat(module.detailed_results, width=300, indent=2))
-    with open(f"programs/auto{i}dr_cnting.json", "w") as f:
-        f.write(str(module.detailed_results))
-    module.save(f"programs/auto{i}_cnting.json")
-
-    passed = False
-    for val_scores in module.detailed_results.val_subscores:
-        all = True
-        for score in val_scores:
-            all = all and (score > 0.6)
-        passed = all or passed
-    if not passed:
-        print("Module not good enough for all samples. Stopping")
-        break
+#for i in range(0,1):
+#
+#    teleprompter = GEPA(metric=difficulty_metric
+#                   ,reflection_lm=dspy.LM(model,temperature=1.0)
+#                   ,num_threads=10
+#                   ,max_metric_calls=total_metric_calls
+#                   ,reflection_minibatch_size=3
+#                   ,track_stats=True
+#                   ,track_best_outputs=True
+#                   ,log_dir=f"gepa_logs{i}"
+#                   ,gepa_kwargs={"stop_callbacks": [MaxMetricCallsStopper(total_metric_calls),ScoreThresholdStopper(0.9)]}
+#                   )
+#
+#    if i > 1:
+#        module.load(f"programs/auto{i - 1}_cnting.json")
+#
+#    #trainset = [dataset[i]]
+#    trainset = dataset[:(i + 1)]
+#    valset = dataset[:(i + 1)]
+#    module = teleprompter.compile(
+#        module,
+#        trainset=trainset,
+#        valset=valset,
+#    )
+#
+#    print(pformat(module.detailed_results, width=300, indent=2))
+#    with open(f"programs/auto{i}dr_cnting.json", "w") as f:
+#        f.write(str(module.detailed_results))
+#    module.save(f"programs/auto{i}_cnting.json")
+#
+#    passed = False
+#    for val_scores in module.detailed_results.val_subscores:
+#        all = True
+#        for score in val_scores:
+#            all = all and (score > 0.6)
+#        passed = all or passed
+#    if not passed:
+#        print("Module not good enough for all samples. Stopping")
+#        break

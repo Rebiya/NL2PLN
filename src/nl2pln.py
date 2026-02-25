@@ -4,6 +4,7 @@ import json
 import logging
 import mlflow
 import traceback
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -13,179 +14,18 @@ from cleanPLN import checkStmt, checkQuery, checkImpl, balance_parentheses
 from pettachainer.pettachainer import PeTTaChainer
 
 class NL2PLNSingature(dspy.Signature):
-    """
-    You convert Natural Language sentences to **PLN light statements** following the exact syntax and semantic rules below. Always produce valid, well-formed statements.
-    When possible try to reuse predicates and structures from the context.
+    """Convert natural language to PLN light statements and queries.
 
-    ### 1. General Form
-
-    A PLN light statement has the form:
-
-    ```
-    (: PRF TYPE TRUTH_VALUE)
-    ```
-
-    ### 2. PRF (Proof Reference)
-
-    * Either a concrete identifier (symbol/name), or
-    * A variable `$prf` **only in queries**
-
-    ### 3. TYPE
-
-    TYPE describes the logical content and must follow these rules:
-
-    #### 3.1 Predicates
-
-    * A predicate is written as:
-
-    ```
-    (Predicate arg1 arg2 ...)
-    ```
-
-    * Arguments may be objects or variables.
-
-    #### 3.2 Logical Connectives
-
-    Predicates can be combined using:
-
-    * `And`
-    * `Or`
-    * `Implication`
-    * `LikelierThan`
-
-    Example:
-
-    ```
-    (And (Predicate1 x) (Predicate2 x))
-    ```
-
-    #### 3.3 Variables and Quantification
-
-    * Variables are written as `$var`
-    * **Variables may only appear inside Implications**, except in queries.
-    * In an Implication:
-
-      * Variables appearing in the **Premises** are **universally quantified**
-      * Variables appearing **only in the Conclusions** are **existentially quantified**
-
-    Example:
-
-    ```
-    (Implication
-        (Premises
-            (Predicate1 $x $y))
-        (Conclusions
-            (Predicate2 $y $z)
-            (Predicate3 $z)))
-    ```
-
-    Here:
-
-    * `$x`, `$y` are universally quantified
-    * `$z` is existentially quantified
-
-    #### 3.4 Queries
-
-    * Queries may contain variables **anywhere** a predicate name or argument can appear
-    * Queries typically use `$prf` and/or `$tv`
-
-    Examples:
-
-    ```
-    ($pred x)
-    (Predicate $x)
-    ```
-
-    ### 4. Compute Predicate
-
-    There exists a special hardcoded predicate:
-
-    ```
-    (Compute operator args -> result)
-    ```
-
-    Rules:
-
-    * `operator` is one of: `< <= + - * /`
-    * `Compute` **may only appear in the premises of an Implication**
-    * Unlike normal predicates, `Compute` is evaluated by executing the operator, not by checking the knowledge base
-
-    Example:
-
-    ```
-    (Implication
-        (Premises
-            (Cardinality dogs $x)
-            (Cardinality cats $y)
-            (Compute + ($x $y) -> $t))
-        (Conclusions
-            (Cardinality dogsPlusCats $t)))
-    ```
-
-    Filtering example:
-
-    ```
-    (Compute > ($x $y) -> True)
-    ```
-
-    ### 5. FoldAll Predicate
-
-    There exists a special aggregation predicate:
-
-    ```
-    (FoldAll pattern value init fun -> out)
-    ```
-
-    Rules:
-
-    * `FoldAll` **may only appear in the Premises of an Implication**
-    * It finds all matches of `pattern` under current bindings
-    * For each match it evaluates `value` and folds that into an accumulator starting from `init`
-    * If there are no matches, the result is `init`
-    * Only `out` is exported to later premises/conclusions
-    * Prefer inline lambdas for fold functions, e.g. `(|-> ($acc $x) (+ $acc $x))`
-
-    Example:
-
-    ```
-    (Implication
-        (Premises
-            (FoldAll (Count $name $n) $n 0 (|-> ($acc $x) (+ $acc $x)) -> $total))
-        (Conclusions
-            (Count Total $total)))
-    ```
-
-    ### 6. TRUTH_VALUE
-
-    TRUTH_VALUE is either:
-
-    * A concrete truth value:
-
-    ```
-    (STV strength confidence)
-    ```
-
-    where `strength` and `confidence` are real numbers in `[0, 1]`, or
-
-    * A variable `$tv` **only in queries**
-
-    ### 7. Output Constraints
-
-    * Always follow the exact syntax
-    * Do not introduce undeclared constructs
-    * Do not place variables outside allowed positions
-    * Do not use `Compute` outside implication premises
-    * Do not use `FoldAll` outside implication premises
-    * Ensure quantification rules are respected
-
-    Produce only valid PLN light statements / queries.
+    Follow `pln_spec` exactly and reuse predicates from `context` when possible.
     """
     #Inputs
     sentences: List[str] = dspy.InputField(desc="Original natural language sentences")
     context: List[str] = dspy.InputField(desc="Contextual information")
+    pln_spec: str = dspy.InputField(desc="PLN light syntax and semantics specification")
 
     #Outputs
-    pln_light: List[str] = dspy.OutputField(desc="PLN light statements")
+    statements: List[str] = dspy.OutputField(desc="PLN light statements to add to the knowledge base")
+    queries: List[str] = dspy.OutputField(desc="PLN light queries for question answering")
 
 class NL2PLNModule(dspy.Module):
 
@@ -193,12 +33,22 @@ class NL2PLNModule(dspy.Module):
         self.nl2pln : dspy.Module = dspy.ChainOfThought(NL2PLNSingature)
 
     def forward(self, sentences : List[str], queries: List[dict]):
-        stmts = self.nl2pln(sentences=sentences,context=[]).pln_light
+        base = self.nl2pln(sentences=sentences, context=[], pln_spec=pln_spec)
+        stmts = [] if base.statements is None else list(base.statements)
+        seen = set(stmts)
+        context_stmts = list(stmts)
 
         queries_pln = []
         for q in queries:
-            pln_q = self.nl2pln(sentences=[q['question']],context=stmts)
-            queries_pln.append(pln_q.pln_light)
+            pln_q = self.nl2pln(sentences=[q['question']], context=context_stmts, pln_spec=pln_spec)
+            q_stmts = [] if pln_q.statements is None else list(pln_q.statements)
+            for s in q_stmts:
+                if s not in seen:
+                    seen.add(s)
+                    stmts.append(s)
+                    context_stmts.append(s)
+            q_queries = [] if pln_q.queries is None else list(pln_q.queries)
+            queries_pln.append(q_queries)
 
         return dspy.Prediction(statements=stmts, queries=queries_pln)
 
@@ -212,6 +62,7 @@ class ProofEvaluatorSignature(dspy.Signature):
     sentences: List[str] = dspy.InputField(desc="Original natural language sentences")
     question: str = dspy.InputField(desc="The question being asked")
     expected_answer: str = dspy.InputField(desc="The expected answer to the question")
+    pln_spec: str = dspy.InputField(desc="Current PLN light syntax and semantics specification")
     statements: List[str] = dspy.InputField(desc="PLN statements generated from sentences")
     query: List[str] = dspy.InputField(desc="PLN query generated for the question")
     proof: str = dspy.InputField(desc="The proof result from running the query")
@@ -227,42 +78,16 @@ class ProofEvaluator(dspy.Module):
     def __init__(self):
         self.evaluate = dspy.ChainOfThought(ProofEvaluatorSignature)
 
-    def forward(self, sentences, question, expected_answer, statements, query, proof):
+    def forward(self, sentences, question, expected_answer, pln_spec, statements, query, proof):
         return self.evaluate(
             sentences=sentences,
             question=question,
             expected_answer=expected_answer,
+            pln_spec=pln_spec,
             statements=statements,
             query=query,
             proof=proof
         )
-
-pln_spec = """
-A pln light statment has the following form:
-(: PRF TYPE TRUTH_VALUE)
-PRF can be either a specific name or a varaible $prf in the case of queries.
-TYPE can be one of:
-    A Predicate applied to on or more objects (Predicate x y)
-    Which can be combined using And Or Implication LikelierThan.
-        Example: (And (Predicate1 x) (Predicate2 x))
-    Statments should have variables $var only inside Implications.
-    Variables in the Premises are universally quantified.
-    Variables that appear only in the Conclusions are existentially quantified.
-        Example: (Implication (Premises (Predicate1 $x $y)) (Conclusions (Predicate2 $y $z) (Predicate3 $z))) [$x $y are universally quantified, $z is existentially quantified]
-    Queries can have variables at any location that a Predicate or Object could appear.
-        Example: ($pred x) / (Pred $x)
-TRUTH_VALUE can be either (STV strength confidence) with strenght and confidence between 0 and 1
-            or a variable $tv in the case of queries.
-
-There exists a hardcoded (Compute $f $args -> $res) Predicate whose first argument is an arithmetic operator like < <= + - * /
-which should only be used in the Premises of an Implication.
-Example: (Implication (Premises (Cardinality dogs $x) (Cardinality cats $y) (Compute + ($x $y) -> $t)) (Conclusions (Cardinality dogsPlusCats $t)))
-Compared to normal predicetes who's existed is check in the knowledge base the Compute predicate is checked by running the function/operator.
-
-There also exists (FoldAll $pattern $value $init $fun -> $out) for aggregations in Premises.
-`$value` controls what gets passed into the folding function for each match.
-Example: (Implication (Premises (FoldAll (Count $name $n) $n 0 (|-> ($acc $x) (+ $acc $x)) -> $total)) (Conclusions (Count Total $total)))
-"""
 
 def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pred_name=None, pred_trace=None):
     try:
@@ -304,6 +129,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
                 sentences=gold.sentences,
                 question=q['question'],
                 expected_answer=q['expected_answer'],
+                pln_spec=pln_spec,
                 statements=pred.statements,
                 query=query_pln,
                 proof=str(proof)
@@ -368,17 +194,22 @@ if __name__ == '__main__':
     #model = "openrouter/google/gemini-3-flash-preview"
     model = "openai/gpt-5.2"
 
-    dspy.configure(lm=dspy.LM(model,temperature=1.0, max_tokens=20000))
+    dspy.configure(
+        lm=dspy.LM(model,temperature=1.0, max_tokens=20000),
+        #enable_disk_cache=False,
+        #enable_memory_cache=False,
+    )
     dspy.settings.configure(track_usage=True)
 
     module = NL2PLNModule()
-    #module.load("src/nl2plnModuleJan2026.json")
+    #compiled_program = Path("programs/simba_all3.json")
+    #if compiled_program.exists():
+    #    module.load(str(compiled_program))
+    #else:
+    #    logger.info("No compiled program found at %s; running module without load().", compiled_program)
 
-    #puzzle_data = build_examples_from_file("data/andres.json")
-    puzzle_data = build_examples_from_file("data/counting.json")
-    #puzzle_data = build_examples_from_file("data/sentences.json")
-
-    #puzzle_data = puzzle_data[0:17]
+    puzzle_data = build_examples_from_file("data/all.json")
+    puzzle_data = puzzle_data[0:1]
 
     score_sum = 0
     for puzzle in puzzle_data:
@@ -391,3 +222,5 @@ if __name__ == '__main__':
         print(metric.feedback)
         score_sum += metric.score
     print(score_sum/len(puzzle_data))
+
+    dspy.inspect_history()

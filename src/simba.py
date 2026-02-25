@@ -2,11 +2,15 @@ import os
 import dspy
 import json
 import mlflow
+import logging
 from pprint import pformat
 from dspy.teleprompt import SIMBA
 from dspy.utils.callback import BaseCallback
+from pathlib import Path
 
 from nl2pln import NL2PLNModule , difficulty_metric , build_examples_from_file
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 #  LM configuration                                                           #
@@ -22,21 +26,7 @@ model = "openai/gpt-5.2"
 optmodel = model
 
 lm = dspy.LM(model)
-
-class PromptDumpCallback(BaseCallback):
-    def on_lm_start(self, **event):
-        call_id  = event.get("call_id")
-        messages   = event.get("inputs").get("messages")
-
-        record = {
-            "call_id": call_id,
-            "messages": messages,
-        }
-
-        with open("dspy_prompts.jsonl", "a", encoding="utf-8") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-dspy.configure(lm=lm,callbacks=[PromptDumpCallback()])
+dspy.configure(lm=lm)
 
 tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 if tracking_uri:
@@ -50,20 +40,25 @@ if tracking_uri:
 
 #dataset = build_examples_from_file("data/sentences.json")
 #dataset = build_examples_from_file("data/andres.json")
-dataset = build_examples_from_file("data/counting.json")
+#dataset = build_examples_from_file("data/counting.json")
+dataset = build_examples_from_file("data/all.json")
 
 module = NL2PLNModule()
-#module.load("programs/auto0_andres.json")
+checkpoint_path = Path("programs/simba_all2_gepa.json")
+if checkpoint_path.exists():
+    module.load(str(checkpoint_path))
+else:
+    logger.info("No checkpoint found at %s; training from uninitialized module.", checkpoint_path)
 
 teleprompter = SIMBA(
     metric=difficulty_metric,
     prompt_model=dspy.LM(optmodel, temperature=1.0),
-    bsize=1,
+    bsize=8,
     num_threads=10,
 )
 
 module = teleprompter.compile(module,trainset=dataset,)
-module.save(f"programs/counting.json")
+module.save(f"programs/simba_all3.json")
 
 #for i in range(0,2):
 #

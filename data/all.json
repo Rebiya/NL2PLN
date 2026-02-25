@@ -1,0 +1,383 @@
+[
+  {
+    "sentences": [
+      "There are 3 cats are in the park, all of these cats are cute."
+    ],
+    "queries": [
+      {
+        "question": "Are all cats cute?",
+        "expected_answer": "Only all the cats that are in the park are cute."
+      },
+      {
+        "question": "Is there any cute cat in the park?",
+        "expected_answer": "Yes"
+      },
+      {
+        "question": "Are there at least 2 cute cats in the park?",
+        "expected_answer": "Yes"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "Tom, Mary, and Alex are the 3 cats in the park."
+    ],
+    "queries": [
+      {
+        "question": "Name any 2 cats in the park.",
+        "expected_answer": "'Tom and Mary', or 'Tom and Alex', or 'Mary and Alex'"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "There are 10 millions traders in Company_X who make transactions with each other.",
+      "Tom and Mary are two traders in Company_X."
+    ],
+    "queries": [
+      {
+        "question": "Could Tom and Mary make transactions with each other?",
+        "expected_answer": "Yes they could (since they are two of the 10 millions traders in Company_X)"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "About 10 dogs were there in the house."
+    ],
+    "queries": [
+      {
+        "question": "Could there be 11 dogs in the house?",
+        "expected_answer": "Yes (since it's still very close to 10)"
+      },
+      {
+        "question": "Could there be 100 dogs in the house?",
+        "expected_answer": "No (since it's too much bigger than 10)"
+      },
+      {
+        "question": "Could there be fewer than 10 dogs in the house?",
+        "expected_answer": "Yes (could be 9 or 8, but can't be 1 or 2)"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "More than half but less than two-thirds of the students failed the exam."
+    ],
+    "queries": [
+      {
+        "question": "Is it true that more than 60% of the students failed the exam?",
+        "expected_answer": "Yes (since 60% > 50% and 60% < 66.666%)"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "Among all the runners, only Bob made it to the finish line.",
+      "Alice was one of the runners."
+    ],
+    "queries": [
+      {
+        "question": "Could Alice have made it to the finish line?",
+        "expected_answer": "No (since only Bob made it among the runners)"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Everyone in the classroom is taller than 160cm, except Henry.",
+      "Rio is in the classroom."
+    ],
+    "queries": [
+      {
+        "question": "Is Henry in the classroom?",
+        "expected_answer": "Yes (or very likely so)"
+      },
+      {
+        "question": "How tall is Rio?",
+        "expected_answer": "Rio is taller than 160cm"
+      },
+      {
+        "question": "Is Henry taller than 160cm?",
+        "expected_answer": "No"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "2 out of 10 people in the room met the new teacher.",
+      "Bob is one of the people in the room."
+    ],
+    "queries": [
+      {
+        "question": "What is the chance that Bob met the new teacher?",
+        "expected_answer": "2 out of 10, or 20%"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "Oranges are bigger than limes.",
+      "Water melons are bigger than oranges."
+    ],
+    "queries": [
+      {
+        "question": "Are limes smaller than water melons?",
+        "expected_answer": "Yes"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob eats 5 apples every morning."
+    ],
+    "queries": [
+      {
+        "question": "Morning has just come for today, is Bob going to eat 5 apples?",
+        "expected_answer": "Yes (or very likely so)"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Max is a Dog"
+    ],
+    "queries": [
+      {
+        "question": "What is max?",
+        "expected_answer": "Max is a Dog."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob likes hot food."
+    ],
+    "queries": [
+      {
+        "question": "What attribute does food have that Bob likes?",
+        "expected_answer": "It's hot."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Whales are mammals that live in the ocean.",
+      "Animals that live in the ocean are marine animals.",
+      "Marine mammals are exposed to pollutant P.",
+      "Exposure to pollutant P increases the risk of Disease Z.",
+      "mammals are animals"
+    ],
+    "queries": [
+      {
+        "question": "Are whales at risk of Disease Z?",
+        "expected_answer": "Whales are at risk."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "10.10.2025, Bob went swimming today."
+    ],
+    "queries": [
+      {
+        "question": "11.10.2025, What was Bob doing yesterday?",
+        "expected_answer": "Bob was swimming"
+      },
+      {
+        "question": "11.10.2025, When was Bob swimming?",
+        "expected_answer": "Yesterday"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob and Anna like hiking.",
+      "They often go together."
+    ],
+    "queries": [
+      {
+        "question": "What is the name of the people that like hiking?",
+        "expected_answer": "Bob and Anna."
+      },
+      {
+        "question": "Who goes hiking?",
+        "expected_answer": "Bob and Anna."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "There is a bright red ball and a bright light."
+    ],
+    "queries": [
+      {
+        "question": "What bright objects do we have?",
+        "expected_answer": "A light and a red color"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob always played tennis."
+    ],
+    "queries": [
+      {
+        "question": "What is the probability that Bob is playing tennis now?",
+        "expected_answer": "The probablity should be around 5-20% with confidence that is not to high"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob always went swimming."
+    ],
+    "queries": [
+      {
+        "question": "What is the probability that Bob is swimming now?",
+        "expected_answer": "Higher than the one-time case; likely non-trivial but uncertain."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob went swimming."
+    ],
+    "queries": [
+      {
+        "question": "What is the probability that Bob is swimming now?",
+        "expected_answer": "Lower than the always case and possibly quite low."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "The Knife is long and sharp as a kitchen knife but short and blunt as a sashimi knife."
+    ],
+    "queries": [
+      {
+        "question": "Is the Knife long as compared to a different knife?",
+        "expected_answer": "Yes compared to a kitchen knife it is long."
+      },
+      {
+        "question": "Are kitchen knifes shorter then sashimi knives?",
+        "expected_answer": "Yes, kitchen knifes are shorter then sashimi knives."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "The meeting won't happen unless everyone agrees."
+    ],
+    "queries": [
+      {
+        "question": "Who has to agree for the meeting to happen?",
+        "expected_answer": "Everyone that is somewhat related to it."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "There are 10 humans that can fly."
+    ],
+    "queries": [
+      {
+        "question": "How many humans are flying?",
+        "expected_answer": "No proof possible."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "10.10.2025, Bob went away in february."
+    ],
+    "queries": [
+      {
+        "question": "10.10.2025, How many months ago was it that bob went away?",
+        "expected_answer": "8"
+      },
+      {
+        "question": "10.10.2025, What year was it when bob went away?",
+        "expected_answer": "2025"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Mark, Bob and Anna are helping each other with homework."
+    ],
+    "queries": [
+      {
+        "question": "Does Mark help Anna with homework?",
+        "expected_answer": "Yes"
+      },
+      {
+        "question": "Who is providing help with homework?",
+        "expected_answer": "Mark, Bob and Anna."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "The Dog has magical fur and a white tail."
+    ],
+    "queries": [
+      {
+        "question": "Is the dog magical?",
+        "expected_answer": "Yes"
+      },
+      {
+        "question": "Is the dog white?",
+        "expected_answer": "Unclear. Part of it is so a maybe something along the lines of (STV 0.2 0.5) there is a low probabilty but we aren't sure."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob is behind the door."
+    ],
+    "queries": [
+      {
+        "question": "Where is Bob?",
+        "expected_answer": "Behind the door."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "I only eat vegetables on days when I exercise."
+    ],
+    "queries": [
+      {
+        "question": "On which days do you only eat vegetables?",
+        "expected_answer": "On days when I exercise."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob kicked the bucket."
+    ],
+    "queries": [
+      {
+        "question": "Did Bob kick anything?",
+        "expected_answer": "Yes Bob kicked the bucket, with a non-zero probability."
+      },
+      {
+        "question": "Did Bob die?",
+        "expected_answer": "Yes Bob died, with a non-zero probability."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "A camera is a device that takes pictures (photographs)."
+    ],
+    "queries": [
+      {
+        "question": "What do pictures also known as?",
+        "expected_answer": "Photographs."
+      }
+    ]
+  }
+]

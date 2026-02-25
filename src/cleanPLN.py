@@ -56,7 +56,7 @@ def checkStmt(expr: str) -> float:
     return _run_petta_check(expr, pattern, value_if_var=0.0, value_if_nonvar=1.0)
 
 def checkImpl(expr: str) -> float:
-    pattern = "(: $123prf (Implication $123654a $123654b) (STV $123s $123c))"
+    pattern = "(: $123prf (Implication (cons Premises $123654a) (cons Conclusions $123654b)) (STV $123s $123c))"
     return _run_petta_check(expr, pattern, value_if_var=0.0, value_if_nonvar=1.0)
 
 def checkQuery(expr: str) -> float:

@@ -58,12 +58,19 @@ def test_checkstmt_rejects_non_stmt_shape():
 
 
 def test_checkimpl_matches_implication_shape():
-    result = cleanPLN.checkImpl("(: prf (Implication a b) (STV 1.0 1.0))")
+    result = cleanPLN.checkImpl(
+        "(: prf (Implication (Premises (Count A $a) (Count B $b) (Compute + ($a $b) -> $c)) (Conclusions (Count C $c))) (STV 1.0 1.0))"
+    )
     assert result == pytest.approx(1.0)
 
 
 def test_checkimpl_rejects_non_implication_shape():
     result = cleanPLN.checkImpl("(: prf foo (STV 1.0 1.0))")
+    assert result == pytest.approx(0.0)
+
+
+def test_checkimpl_rejects_legacy_binary_implication_shape():
+    result = cleanPLN.checkImpl("(: prf (Implication a b) (STV 1.0 1.0))")
     assert result == pytest.approx(0.0)
 
 
