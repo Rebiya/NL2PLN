@@ -1,37 +1,48 @@
 from pettachainer.pettachainer import PeTTaChainer
 from nl2pln import NL2PLNModule
-
 import dspy
 
-data = ["Fido is a dog."
-       ,"Dogs are Animals."
-       ]
-
-query = "What is Fido?"
-
-model = "openrouter/google/gemini-3-flash-preview"
-
-dspy.configure(lm=dspy.LM(model,temperature=1.0, max_tokens=20000))
+model = "openrouter/deepseek/deepseek-chat"
+dspy.configure(lm=dspy.LM(model, temperature=0.6, max_tokens=2000))
 dspy.settings.configure(track_usage=True)
 
 metta_handler = PeTTaChainer()
-
 training_module = NL2PLNModule()
-training_module.load("src/nl2plnModuleJan2026.json")
-
+training_module.load("src/simba_all.json")
 module = training_module.nl2pln
 
-for elem in data:
-    stmts = module(sentences=[elem], context=[]).pln_light
-    for stmt in stmts:
-        print(f"Adding statement: {stmt}")
-        metta_handler.add_atom(stmt)
+# Better context to help consistency
+context = ["Use consistent predicate names. Use singular forms for types (dog, animal, bird). Always use $x for variables in rules."]
 
-pln_querys = module(sentences=[query], context=[]).pln_light
-for pln_query in pln_querys:
-    print(f"Query: {pln_query} Result:")
-    print(metta_handler.query(pln_query))
+tests = [
+    {"sentences": ["Fido is a dog.", "Dogs are animals."], "query": "Is Fido an animal?"},
+    {"sentences": ["All birds can fly.", "Sparrows are birds."], "query": "Can sparrows fly?"},
+    {"sentences": ["All men are mortal.", "Socrates is a man."], "query": "Is Socrates mortal?"},
+]
 
-#Notes:
-#For larger systems we should provide a context here of sentnences and their pln representation using the same or similar concepts
-#Retrived from the knowledge base using Embeddings or similar. This ensures that the representations stay consistent making the reasoning simpler.
+for test in tests:
+    print(f"\n{'='*60}\nTEST: {test['query']}\n{'='*60}")
+
+    for s in test["sentences"]:
+        result = module(sentences=[s], queries=[], context=context, pln_spec="")
+        for stmt in result.statements:
+            print(f"Adding → {stmt}")
+            try:
+                metta_handler.add_atom(stmt)
+            except Exception as e:
+                print(f"  → Add failed: {e}")
+
+    print(f"\nQuery: {test['query']}")
+    result = module(sentences=[test['query']], queries=[{"question": test['query']}], context=context, pln_spec="")
+
+    for q_list in result.queries:
+        for q in q_list:
+            q_str = str(q).strip()
+            if len(q_str) < 10: 
+                continue
+            print(f"Executing: {q_str}")
+            try:
+                res = metta_handler.query(q_str)
+                print(f"Result: {res}")
+            except Exception as e:
+                print(f"Error: {e}")

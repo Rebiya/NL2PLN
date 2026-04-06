@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 from typing import List
 from textwrap import dedent
-from pettachainer import PeTTaChainer, get_language_spec
+from pettachainer.pettachainer import PeTTaChainer, get_language_spec
 
 pln_spec = get_language_spec(llm_focused=True)
 
@@ -116,7 +116,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
         proofs = []
         for qr in pred.queries:
             try:
-                proofs.append(metta_handler.query(qr[0]))
+                proofs.append(metta_handler.query(qr[0]))#Run queries
             except Exception as e:
                 return dspy.Prediction(
                     score=score,
@@ -126,7 +126,7 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
 
         total_score = 0.0
         feedback_details = []
-
+# evaluate with LLM
         for q, query_pln, proof in zip(gold.queries, pred.queries, proofs):
             evaluation = evaluator(
                 sentences=gold.sentences,
