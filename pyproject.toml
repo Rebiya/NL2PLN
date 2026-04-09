@@ -9,6 +9,9 @@ dependencies = [
     "mlflow>=3.6.0",
     "pytest>=9.0.1",
     "pettachainer",
+    "qdrant-client",
+    "sentence-transformers",
+    "nltk",
 ]
 
 [tool.uv.sources]
