@@ -1,37 +1,28 @@
+from rag_nl2pln import RAGNL2PLN
 from pettachainer.pettachainer import PeTTaChainer
-from nl2pln import NL2PLNModule
 
-import dspy
-
-data = ["Fido is a dog."
-       ,"Dogs are Animals."
-       ]
-
-query = "What is Fido?"
-
-model = "openrouter/google/gemini-3-flash-preview"
-
-dspy.configure(lm=dspy.LM(model,temperature=1.0, max_tokens=20000))
-dspy.settings.configure(track_usage=True)
+rag = RAGNL2PLN(
+    data_file="data/all.json",
+    model="deepseek/deepseek-v3.2"   # Best current cheap & capable model
+)
 
 metta_handler = PeTTaChainer()
 
-training_module = NL2PLNModule()
-training_module.load("src/nl2plnModuleJan2026.json")
+sentences = ["Good students study hard.", "Students who study hard go to library.", "Abebe is a good student."]
+queries = [{"question": "Do abebe go to library?"}]
 
-module = training_module.nl2pln
+result = rag.convert(sentences=sentences, queries=queries)
 
-for elem in data:
-    stmts = module(sentences=[elem], context=[]).pln_light
-    for stmt in stmts:
-        print(f"Adding statement: {stmt}")
-        metta_handler.add_atom(stmt)
+print("Statements:", result.statements)
+print("Queries:", result.queries)
 
-pln_querys = module(sentences=[query], context=[]).pln_light
-for pln_query in pln_querys:
-    print(f"Query: {pln_query} Result:")
-    print(metta_handler.query(pln_query))
+for stmt in result.statements:
+    metta_handler.add_atom(stmt)
 
-#Notes:
-#For larger systems we should provide a context here of sentnences and their pln representation using the same or similar concepts
-#Retrived from the knowledge base using Embeddings or similar. This ensures that the representations stay consistent making the reasoning simpler.
+for q_list in result.queries:
+    for q in q_list:
+        print("Query:", q)
+        try:
+            print("Result:", metta_handler.query(q))
+        except Exception as e:
+            print("Query error:", e)

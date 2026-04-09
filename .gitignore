@@ -10,3 +10,6 @@ wheels/
 .venv
 gepa_logs
 programs
+data/qdrant_local/
+data/qdrant_storage/
+.env

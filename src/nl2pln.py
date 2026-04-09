@@ -4,51 +4,54 @@ import json
 import logging
 import mlflow
 import traceback
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 from typing import List
 from textwrap import dedent
-from cleanPLN import checkStmt, checkQuery, checkImpl, balance_parentheses
-from pettachainer.pettachainer import PeTTaChainer
+from pettachainer.pettachainer import PeTTaChainer, get_language_spec
+
+pln_spec = get_language_spec(llm_focused=True)
+
+class NL2PLNSingature(dspy.Signature):
+    """Convert natural language to PLN light statements and queries.
+
+    Follow `pln_spec` exactly and reuse predicates from `context` when possible.
+    """
+    #Inputs
+    sentences: List[str] = dspy.InputField(desc="Original natural language sentences")
+    context: List[str] = dspy.InputField(desc="Contextual information")
+    pln_spec: str = dspy.InputField(desc="PLN light syntax and semantics specification")
+
+    #Outputs
+    statements: List[str] = dspy.OutputField(desc="PLN light statements to add to the knowledge base")
+    queries: List[str] = dspy.OutputField(desc="PLN light queries for question answering")
 
 class NL2PLNModule(dspy.Module):
+
     def __init__(self):
-        self.nl2pln : dspy.Module = dspy.ChainOfThought("sentences: list[str] , context: list[str] -> pln_light: list[str]")
+        self.nl2pln : dspy.Module = dspy.ChainOfThought(NL2PLNSingature)
 
     def forward(self, sentences : List[str], queries: List[dict]):
-        stmts = self.nl2pln(sentences=sentences,context=[]).pln_light
+        base = self.nl2pln(sentences=sentences, context=[], pln_spec=pln_spec)
+        stmts = [] if base.statements is None else list(base.statements)
+        seen = set(stmts)
+        context_stmts = list(stmts)
 
         queries_pln = []
         for q in queries:
-            pln_q = self.nl2pln(sentences=[q['question']],context=stmts)
-            queries_pln.append(pln_q.pln_light)
+            pln_q = self.nl2pln(sentences=[q['question']], context=context_stmts, pln_spec=pln_spec)
+            q_stmts = [] if pln_q.statements is None else list(pln_q.statements)
+            for s in q_stmts:
+                if s not in seen:
+                    seen.add(s)
+                    stmts.append(s)
+                    context_stmts.append(s)
+            q_queries = [] if pln_q.queries is None else list(pln_q.queries)
+            queries_pln.append(q_queries)
 
         return dspy.Prediction(statements=stmts, queries=queries_pln)
-
-pln_spec = """
-A pln light statment has the following form:
-(: PRF TYPE TRUTH_VALUE)
-PRF can be either a specific name or a varaible $prf in the case of queries.
-TYPE can be one of:
-    A Predicate applied to on or more objects (Predicate x y)
-    Which can be combined using And Or Implication LikelierThan.
-        Example: (And (Predicate1 x) (Predicate2 x))
-    Statments should have variables $var only inside Implications.
-    Variables in the premises are universally quantified.
-    Variables that appear only in the coclusion are existentially quantified.
-        Example: (Implication (Predicate1 $x $y) (And (Predicate2 $y $z) (Predicate3 $z))) [$x $y are universally quantified, $z is existentially quantified]
-    Queries can have variables at any location that a Predicate or Object could appear.
-        Example: ($pred x) / (Pred $x)
-TRUTH_VALUE can be either (STV strength confidence) with strenght and confidence between 0 and 1
-            or a variable $tv in the case of queries.
-"""
-functions = """
-There exist a hardcoded CPU predicate whos first argument is an arithmetric operator like < <= + - * /
-which should only be used in the premises of an implication.
-Example: (Implication (And (Cardinality dogs $x) (Cardinality cats $y) (CPU + ($x $y) $t)) (Cardinality dogsPlusCats $t))
-Compared to normal predicetes who's existed is check in the knowledge base the CPU predicate is checked by running the function.
-"""
 
 class ProofEvaluatorSignature(dspy.Signature):
     """Evaluate how well a proof answers a question and suggest improvements.
@@ -60,6 +63,7 @@ class ProofEvaluatorSignature(dspy.Signature):
     sentences: List[str] = dspy.InputField(desc="Original natural language sentences")
     question: str = dspy.InputField(desc="The question being asked")
     expected_answer: str = dspy.InputField(desc="The expected answer to the question")
+    pln_spec: str = dspy.InputField(desc="Current PLN light syntax and semantics specification")
     statements: List[str] = dspy.InputField(desc="PLN statements generated from sentences")
     query: List[str] = dspy.InputField(desc="PLN query generated for the question")
     proof: str = dspy.InputField(desc="The proof result from running the query")
@@ -75,11 +79,12 @@ class ProofEvaluator(dspy.Module):
     def __init__(self):
         self.evaluate = dspy.ChainOfThought(ProofEvaluatorSignature)
 
-    def forward(self, sentences, question, expected_answer, statements, query, proof):
+    def forward(self, sentences, question, expected_answer, pln_spec, statements, query, proof):
         return self.evaluate(
             sentences=sentences,
             question=question,
             expected_answer=expected_answer,
+            pln_spec=pln_spec,
             statements=statements,
             query=query,
             proof=proof
@@ -97,34 +102,37 @@ def difficulty_metric(gold: dspy.Example, pred: dspy.Prediction, trace=None, pre
             return dspy.Prediction(score=score, feedback="No pln statements found")
 
         for stmt in pred.statements:
-            if checkStmt(stmt) == 0.0:
+            try:
+                metta_handler.add_atom(stmt)
+            except Exception as e:
                 return dspy.Prediction(
                     score=score,
-                    feedback=f"""The statement {stmt} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
+                    feedback=f"""The statement {stmt} did not follow the right syntax. Follow the pln light spec {pln_spec}. Details: {e}"""
                 )
             score += 0.001
-            metta_handler.add_atom(stmt)
 
-        for query in pred.queries:
-            if checkQuery(query[0]) == 0.0:
-                return dspy.Prediction(
-                    score=score,
-                    feedback=f"""The query {query[0]} did not follow the right syntax. Follow the pln light spec {pln_spec}"""
-                )
-            score += 0.001
+        metta_handler.print_kb()
 
         proofs = []
         for qr in pred.queries:
-            proofs.append(metta_handler.query(qr[0]))
+            try:
+                proofs.append(metta_handler.query(qr[0]))#Run queries
+            except Exception as e:
+                return dspy.Prediction(
+                    score=score,
+                    feedback=f"""The query {qr[0]} did not follow the right syntax. Follow the pln light spec {pln_spec}. Details: {e}"""
+                )
+            score += 0.001
 
         total_score = 0.0
         feedback_details = []
-
+# evaluate with LLM
         for q, query_pln, proof in zip(gold.queries, pred.queries, proofs):
             evaluation = evaluator(
                 sentences=gold.sentences,
                 question=q['question'],
                 expected_answer=q['expected_answer'],
+                pln_spec=pln_spec,
                 statements=pred.statements,
                 query=query_pln,
                 proof=str(proof)
@@ -186,19 +194,25 @@ if __name__ == '__main__':
     #model = "openrouter/openai/gpt-5.1"
     #model = "openrouter/deepseek/deepseek-v3.2"
     #model = "cerebras/gpt-oss-120b"
-    model = "openrouter/google/gemini-3-flash-preview"
+    #model = "openrouter/google/gemini-3-flash-preview"
+    model = "openai/gpt-5.2"
 
-    dspy.configure(lm=dspy.LM(model,temperature=1.0, max_tokens=20000))
+    dspy.configure(
+        lm=dspy.LM(model,temperature=1.0, max_tokens=20000),
+        #enable_disk_cache=False,
+        #enable_memory_cache=False,
+    )
     dspy.settings.configure(track_usage=True)
 
     module = NL2PLNModule()
-    module.load("src/nl2plnModuleJan2026.json")
+    #compiled_program = Path("programs/simba_all3.json")
+    #if compiled_program.exists():
+    #    module.load(str(compiled_program))
+    #else:
+    #    logger.info("No compiled program found at %s; running module without load().", compiled_program)
 
-    #puzzle_data = build_examples_from_file("data/andres.json")
-    #puzzle_data = build_examples_from_file("data/counting.json")
-    puzzle_data = build_examples_from_file("data/sentences.json")
-
-    puzzle_data = puzzle_data[0:17]
+    puzzle_data = build_examples_from_file("data/all.json")
+    puzzle_data = puzzle_data[0:1]
 
     score_sum = 0
     for puzzle in puzzle_data:

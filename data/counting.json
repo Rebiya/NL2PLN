@@ -1,0 +1,15 @@
+[
+  {
+    "sentences": [
+      "There is a house with 2 rooms.",
+      "Room 1 contains 2 dogs.",
+      "Room 2 contains 3 dogs."
+    ],
+    "queries": [
+      {
+        "question": "How many dogs are there in the house?",
+        "expected_answer": "There are 5 dogs in the house."
+      }
+    ]
+  }
+]

@@ -1,6 +1,145 @@
 [
   {
     "sentences": [
+      "There are 3 cats in the park, all of these cats are cute."
+    ],
+    "queries": [
+      {
+        "question": "Are all cats cute?",
+        "expected_answer": "All the cats we know about are cute."
+      },
+      {
+        "question": "Is there any cute cat in the park?",
+        "expected_answer": "Yes"
+      },
+      {
+        "question": "Are there at least 2 cute cats in the park?",
+        "expected_answer": "Yes"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "Tom, Mary, and Alex are the 3 cats in the park."
+    ],
+    "queries": [
+      {
+        "question": "Name any 2 cats in the park.",
+        "expected_answer": "'Tom and Mary', or 'Tom and Alex', or 'Mary and Alex'"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "There are 10 millions traders in Company_X who make transactions with each other.",
+      "Tom and Mary are two traders in Company_X."
+    ],
+    "queries": [
+      {
+        "question": "Could Tom and Mary make transactions with each other?",
+        "expected_answer": "Yes they could (since they are two of the 10 millions traders in Company_X)"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "About 10 dogs were there in the house."
+    ],
+    "queries": [
+      {
+        "question": "Could there be 11 dogs in the house?",
+        "expected_answer": "Yes (since it's still very close to 10)"
+      },
+      {
+        "question": "Could there be 100 dogs in the house?",
+        "expected_answer": "No (since it's too much bigger than 10)"
+      },
+      {
+        "question": "Could there be fewer than 10 dogs in the house?",
+        "expected_answer": "Yes (could be 9 or 8, but can't be 1 or 2)"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "More than half but less than two-thirds of the students failed the exam."
+    ],
+    "queries": [
+      {
+        "question": "Is it true that more than 60% of the students failed the exam?",
+        "expected_answer": "Yes (since 60% > 50% and 60% < 66.666%)"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "Among all the runners, only Bob made it to the finish line.",
+      "Alice was one of the runners."
+    ],
+    "queries": [
+      {
+        "question": "Could Alice have made it to the finish line?",
+        "expected_answer": "No (since only Bob made it among the runners)"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Everyone in the classroom is taller than 160cm, except Henry.",
+      "Rio is in the classroom."
+    ],
+    "queries": [
+      {
+        "question": "Is Henry in the classroom?",
+        "expected_answer": "Yes (or very likely so)"
+      },
+      {
+        "question": "How tall is Rio?",
+        "expected_answer": "Rio is taller than 160cm"
+      },
+      {
+        "question": "Is Henry taller than 160cm?",
+        "expected_answer": "No"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "2 out of 10 people in the room met the new teacher.",
+      "Bob is one of the people in the room."
+    ],
+    "queries": [
+      {
+        "question": "What is the chance that Bob met the new teacher?",
+        "expected_answer": "2 out of 10, or 20%"
+      }
+    ]
+  },
+  {
+  "sentences": [
+      "Oranges are bigger than limes.",
+      "Water melons are bigger than oranges."
+    ],
+    "queries": [
+      {
+        "question": "Are limes smaller than water melons?",
+        "expected_answer": "Yes"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob eats 5 apples every morning."
+    ],
+    "queries": [
+      {
+        "question": "Morning has just come for today, is Bob going to eat 5 apples?",
+        "expected_answer": "Yes (or very likely so)"
+      }
+    ]
+  },
+  {
+    "sentences": [
       "Max is a Dog"
     ],
     "queries": [
@@ -86,6 +225,28 @@
       {
         "question": "What is the probability that Bob is playing tennis now?",
         "expected_answer": "The probablity should be around 5-20% with confidence that is not to high"
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob always went swimming."
+    ],
+    "queries": [
+      {
+        "question": "What is the probability that Bob is swimming now?",
+        "expected_answer": "Higher than the one-time case; likely non-trivial but uncertain."
+      }
+    ]
+  },
+  {
+    "sentences": [
+      "Bob went swimming."
+    ],
+    "queries": [
+      {
+        "question": "What is the probability that Bob is swimming now?",
+        "expected_answer": "Lower than the always case and possibly quite low."
       }
     ]
   },
